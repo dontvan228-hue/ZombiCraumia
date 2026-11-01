@@ -1015,7 +1015,7 @@ const Action = (() => {
     </div>`;
     build($("aGL"));
     bindInput();
-    $("aGo").onclick = () => { $("aIntro").hidden = true; st.paused = false; last = performance.now(); };
+    $("aGo").onclick = () => { $("aIntro").hidden = true; releaseAll(); st.paused = false; last = performance.now(); };
     $("aLet").onclick = () => endInspect(true); $("aDeny").onclick = () => endInspect(false);
     $("bAct").onclick = e => { e.stopPropagation(); if (st.aim) act(st.aim); };
     $("bCrouch").onclick = e => { e.stopPropagation(); toggleCrouch(); };
@@ -1023,6 +1023,7 @@ const Action = (() => {
     last = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
   }
   function stop() {
+    releaseAll();
     cancelAnimationFrame(raf); raf = 0;
     if (renderer) { renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss(); renderer = null; }
     st = null; scene = null;
@@ -1210,7 +1211,7 @@ const Action = (() => {
     };
     stage.onpointerup = stage.onpointercancel = e => {
       if (!st) return;
-      if (e.pointerId === joy.id) { joy.id = null; joy.dx = joy.dy = 0; const k = $("aKnob"); if (k) k.style.transform = ""; return; }
+      if (e.pointerId === joy.id) { resetJoy(); return; }
       if (e.pointerId !== look.id) return;
       look.id = null;
       if (st.mode === "pull" || st.mode === "pullIn") strokeEnd();
@@ -1218,8 +1219,20 @@ const Action = (() => {
       st.pushing = false;
       if (st.mode === "look" && !st.inspect && look.moved < 10 && performance.now() - look.t0 < 450) pickAt(e.clientX, e.clientY);
     };
-    if (!bound) { bound = true; addEventListener("keydown", onKey); addEventListener("keyup", onKeyUp); }
+    stage.onlostpointercapture = e => { if (e.pointerId === joy.id) resetJoy(); };
+    if (!bound) {
+      bound = true;
+      addEventListener("keydown", onKey); addEventListener("keyup", onKeyUp);
+      // a finger or key released anywhere — or never reported — must stop the walk
+      addEventListener("pointerup", e => { if (st && e.pointerId === joy.id) resetJoy(); if (st && e.pointerId === look.id) look.id = null; }, true);
+      addEventListener("pointercancel", e => { if (st && e.pointerId === joy.id) resetJoy(); }, true);
+      addEventListener("touchend", e => { if (st && e.touches.length === 0) { resetJoy(); look.id = null; } }, true);
+      addEventListener("touchcancel", () => { if (st) { resetJoy(); look.id = null; } }, true);
+      addEventListener("blur", releaseAll); document.addEventListener("visibilitychange", releaseAll);
+    }
   }
+  function resetJoy() { joy.id = null; joy.dx = joy.dy = 0; const k = $("aKnob"); if (k) k.style.transform = ""; }
+  function releaseAll() { keys.clear(); resetJoy(); look.id = null; if (st) { st.pushing = false; if (st.charging) st.charging = false; } }
   function joyMove(e) {
     let dx = (e.clientX - joy.cx) / 45, dy = (e.clientY - joy.cy) / 45; const m = Math.hypot(dx, dy); if (m > 1) { dx /= m; dy /= m; }
     joy.dx = dx; joy.dy = dy; const k = $("aKnob"); if (k) k.style.transform = `translate(${dx * 32}px, ${dy * 32}px)`;
@@ -1375,7 +1388,8 @@ const Action = (() => {
     st.x += ix * sp * dt; st.z += iz * sp * dt;
     const hit = collide();
     st.bumpCd -= dt;
-    if (hit && st.moving && !quiet && !st.crouch && st.bumpCd <= 0) { st.bumpCd = 1.5; bump(); }
+    if (hit && !st.touchingFurn && st.moving && !quiet && !st.crouch && st.bumpCd <= 0) { st.bumpCd = 2.5; bump(); }
+    st.touchingFurn = hit;
     st.stepT -= dt;
     if (st.moving && st.stepT <= 0) { st.stepT = 0.5; if (!quiet && !st.crouch) noise(st.x, st.z, 3.5); }
     if (st.moving && st.scratch && st.scratch.on) st.scratch.noise += dt * (quiet || st.crouch ? 0.15 : 0.5);
