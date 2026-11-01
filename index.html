@@ -164,7 +164,7 @@ body {
 @keyframes gturn { to { transform: rotate(360deg); } }
 @keyframes ghold { 50% { transform: scale(.85); background: rgba(241,176,63,.25); } }
 .pmeter { grid-column: 1 / -1; position: relative; height: 14px; background: #1e232d; border-radius: 7px; overflow: hidden; }
-.pmeter .zone { position: absolute; left: 72%; width: 21%; top: 0; bottom: 0; background: rgba(79,198,133,.75); }
+.pmeter .zone { position: absolute; left: 60%; width: 35%; top: 0; bottom: 0; background: rgba(79,198,133,.75); }
 .pmeter .needle { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: #fff; }
 .pmeter .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--warn); }
 .insp { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -188,6 +188,13 @@ body {
 .rb.glow { background: var(--warn); color: #15110a; border-color: var(--warn); animation: ghold 1s infinite; }
 .intro .k { font-family: var(--f-mono); font-size: 13px; color: var(--warn); font-weight: 400; }
 .joy[hidden], .rbtns[hidden], .aimtip[hidden] { display: none; }
+.steps { position: absolute; left: 10px; right: 54px; top: 10px; background: rgba(10,12,18,.88); border: 1px solid var(--warn); border-radius: 8px; padding: 7px 10px; font-size: 13.5px; line-height: 1.35; pointer-events: none; }
+.steps b { display: block; font-family: var(--f-mono); font-weight: 400; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--warn); }
+.help { position: absolute; right: 10px; top: 10px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: rgba(10,12,18,.85); color: var(--ink); font-family: var(--f-display); font-size: 17px; cursor: pointer; }
+.howto { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; color: #dcd8cf; }
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.intro { overflow-y: auto; justify-content: flex-start; }
+.steps[hidden], .modes[hidden] { display: none; }
 .meter { display: flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
 .meter b { font-weight: 400; color: var(--ink); }
 .meter .nbar i { transition: width .1s linear; }
@@ -945,6 +952,9 @@ const Action = (() => {
     box(0.9, 0.12, 0.3, new T.MeshStandardMaterial({ color: 0xaad4f0, transparent: true, opacity: 0.35 }), -0.2, 0.98, 1.82);
     for (let i = 0; i < 8; i++) box(0.04, 0.09, 0.03, M(cols[i % 6], { emissive: cols[i % 6], emissiveIntensity: 0.3 }), -0.55 + i * 0.1, 0.97, 1.82);
     O.pb = tag(box(0.14, 0.035, 0.08, M(0x111317), 0.15, 0.94, 1.62), "pb");
+    O.bag = new T.Group(); O.bag.position.set(-0.45, 0.92, 1.66); scene.add(O.bag);
+    box(0.3, 0.32, 0.16, M(0x3b5b46), 0, 0.16, 0, O.bag); box(0.2, 0.12, 0.02, M(0x2f4a39), 0, 0.12, -0.09, O.bag); box(0.03, 0.12, 0.03, M(0x223328), -0.1, 0.36, 0, O.bag); box(0.03, 0.12, 0.03, M(0x223328), 0.1, 0.36, 0, O.bag);
+    tag(O.bag, "bag");
     // tall drinks fridge: 6 shelves of water + energy drinks in the door
     tag(box(0.56, 1.95, 0.58, M(0xe4e8ec), 0.71, 0.975, 1.71), "fridge");
     box(0.5, 1.82, 0.01, M(0xc8ecff, { emissive: 0x9fd8ff, emissiveIntensity: 0.6 }), 0.71, 0.98, 1.425);
@@ -988,6 +998,8 @@ const Action = (() => {
       <div class="stage" id="aStage">
         <div class="gl" id="aGL"></div>
         <div class="cross"></div>
+        <div class="steps" id="aSteps" hidden></div>
+        <button type="button" class="help" id="aHelp" title="Как играть">?</button>
         <div class="aimtip" id="aAim" hidden></div>
         <div class="tlabel" id="aLabel" hidden></div>
         <div class="edgew" id="aEdge" hidden></div>
@@ -1005,8 +1017,18 @@ const Action = (() => {
           <b>Управление</b>
           ${isTouch ? `<span><b class="k">Джойстик слева</b> — идти.</span><span><b class="k">Палец справа</b> — смотреть по сторонам.</span><span><b class="k">Нажми на предмет</b> или кнопку «Действие», когда он под прицелом.</span><span><b class="k">Присесть</b> — пролезть под ролетой или спрятаться под стол. <b class="k">Тихо</b> — медленно, без шума.</span>`
             : `<span><b class="k">W A S D</b> — идти.</span><span><b class="k">Мышь с зажатой кнопкой</b> — смотреть.</span><span><b class="k">Клик по предмету</b> или <b class="k">E</b> — действие.</span><span><b class="k">C</b> — присесть (под ролету, под стол). <b class="k">Shift</b> — идти тихо.</span>`}
-          <span>Жёлтая подпись показывает, что делать сейчас. Всё, что гремит, слышат снаружи.</span>
-          <button class="btn red" id="aGo" type="button">Понятно, играть</button>
+          <b>Как закрыть ролету — 6 шагов</b>
+          <ol class="howto">
+            <li>Выйди на улицу через дверь.</li>
+            <li>Стоя у витрины, нажми «Действие» — возьмёшься за ролету.</li>
+            <li>Проводи пальцем сверху вниз много раз, пока ролета не щёлкнет на уровне колена.</li>
+            <li>Нажми «Присесть» и иди в дверь — под ролету, внутрь.</li>
+            <li>Встань у двери и нажми «Действие»: зажми палец на экране и отпусти, когда черта в зелёной зоне.</li>
+            <li>Нажми «Действие» — дверь закроется. Ещё раз «Действие» — ключ: проведи пальцем вправо два раза.</li>
+          </ol>
+          <span>Потом: выключи свет, забери воду из холодильника, еду — из своего рюкзака на столе. Всё, что гремит, слышат снаружи.</span>
+          <div class="modes" id="aModes"><button class="btn" id="aEasy" type="button">Обучение — без спешки</button><button class="btn red" id="aGo" type="button">Как в жизни</button></div>
+          <button class="btn" id="aBack" type="button" hidden>Вернуться в игру</button>
         </div>
       </div>
       <div class="meter"><span>шум</span><span class="nbar"><i id="aLoud"></i></span><b id="aLoudT">тихо</b></div>
@@ -1015,7 +1037,10 @@ const Action = (() => {
     </div>`;
     build($("aGL"));
     bindInput();
-    $("aGo").onclick = () => { $("aIntro").hidden = true; releaseAll(); st.paused = false; last = performance.now(); };
+    const begin = easy => { st.easy = easy; $("aIntro").hidden = true; releaseAll(); st.paused = false; last = performance.now(); if (easy) say("Обучение: пока не закроешься, заражённые не подойдут. Делай по шагам — подсказка сверху."); };
+    $("aGo").onclick = () => begin(false); $("aEasy").onclick = () => begin(true);
+    $("aHelp").onclick = e => { e.stopPropagation(); st.paused = true; releaseAll(); $("aIntro").hidden = false; $("aModes").hidden = true; $("aBack").hidden = false; };
+    $("aBack").onclick = () => { $("aIntro").hidden = true; st.paused = false; last = performance.now(); };
     $("aLet").onclick = () => endInspect(true); $("aDeny").onclick = () => endInspect(false);
     $("bAct").onclick = e => { e.stopPropagation(); if (st.aim) act(st.aim); };
     $("bCrouch").onclick = e => { e.stopPropagation(); toggleCrouch(); };
@@ -1082,12 +1107,13 @@ const Action = (() => {
   }
 
   // ---------- actions on objects ----------
-  const NAMES = { switch: "Выключатель", pb: "Пауэрбанк", fridge: "Холодильник", shelf: "Стеллаж с одноразками", door: "Дверь", lock: "Замок", shutter: "Ролета" };
+  const NAMES = { bag: "Твой рюкзак", switch: "Выключатель", pb: "Пауэрбанк", fridge: "Холодильник", shelf: "Стеллаж с одноразками", door: "Дверь", lock: "Замок", shutter: "Ролета" };
   function verb(id) {
     const out = !pIn();
     switch (id) {
       case "switch": return st.lights ? "выключить свет" : "включить свет";
       case "pb": return st.powerbank ? null : "взять";
+      case "bag": return st.bag ? null : "взять еду";
       case "fridge": return !st.fridgeOpen ? "открыть" : st.shelvesTaken < 6 ? `взять воду (полка ${st.shelvesTaken + 1} из 6)` : !st.cans ? "взять энергетики" : "пусто";
       case "shelf": return st.barricaded || st.phase !== "evening" ? null : "толкать к витрине";
       case "door": return st.door === "open" ? "закрыть" : st.locked ? "заперто" : "открыть";
@@ -1101,6 +1127,7 @@ const Action = (() => {
     const out = !pIn();
     switch (id) {
       case "switch": st.lights = !st.lights; noise(st.x, st.z, 0.5); say(st.lights ? "Свет включён. Магазин светится на всё кольцо." : "Щёлк. Свет и неон VAPE над дверью гаснут. Теперь с улицы тебя почти не видно."); return;
+      case "bag": if (!st.bag) { st.bag = true; say("Твой рюкзак: бутерброд, два батончика и яблоко. Еды на день. Больше еды в вейп-шопе нет — утром придётся идти в продуктовый."); } return;
       case "pb": if (!st.powerbank) { st.powerbank = true; O.pb.visible = false; say("Пауэрбанк на 20 000 — в карман. Телефон проживёт пару суток."); } return;
       case "fridge":
         if (!st.fridgeOpen) { st.fridgeOpen = true; noise(st.x, st.z, 0.6); say("Холодильник открыт: 6 полок воды по 5 бутылок и энергетики в двери. Нажимай — забирай по полке. Бутылки звенят."); }
@@ -1165,8 +1192,8 @@ const Action = (() => {
   function strokeEnd() { if (st.stroke > 0.015) { noise(st.x, -0.3, st.mode === "pull" ? 7 : 6); if (!st.script.rattle) { st.script.rattle = true; say("Ролета тугая и гремит на всё Москольцо. Тяни быстрее — и оглядывайся."); } } st.stroke = 0; }
   function slamRelease() {
     st.charging = false; const pw = (1 - Math.cos(st.power)) / 2; st.power = 0;
-    if (pw > 0.72 && pw < 0.93) { st.shutter = 1; noise(-0.5, -0.3, 5); hideGest(); say("Рывок — щёлк! Ролета села в замок. Теперь закрой дверь и поверни ключ.", 5); }
-    else { st.shutter = 0.6; noise(-0.5, -0.3, 12); hideGest(); say(pw <= 0.72 ? "Слабо! Ролета пружинит и подскакивает вверх. Грохот на всё кольцо. Тяни заново." : "Перебор — сорвалась и подскочила. Грохот на всё кольцо. Тяни заново.", 4); }
+    if (pw > 0.6 && pw < 0.95) { st.shutter = 1; noise(-0.5, -0.3, 5); hideGest(); say("Рывок — щёлк! Ролета села в замок. Теперь закрой дверь и поверни ключ.", 5); }
+    else { noise(-0.5, -0.3, 8); say(pw <= 0.6 ? "Слабо — ролета лязгнула, но не села в замок. Зажми ещё раз и отпусти, когда черта в зелёной зоне." : "Перебор — лязг, но не села. Попробуй ещё раз: отпускай раньше, в зелёной зоне.", 4); }
   }
   function turnKey() {
     st.turn += 1; noise(-0.5, 0, 0.6);
@@ -1193,7 +1220,7 @@ const Action = (() => {
       if (isTouch && st.mode === "look" && e.clientX - r.left < r.width * 0.45 && e.clientY - r.top > r.height * 0.35 && joy.id == null) {
         joy.id = e.pointerId; const jb = $("aJoy").getBoundingClientRect(); joy.cx = jb.left + jb.width / 2; joy.cy = jb.top + jb.height / 2; joyMove(e); return;
       }
-      look.id = e.pointerId; look.x = e.clientX; look.y = e.clientY; look.t0 = performance.now(); look.moved = 0;
+      look.id = e.pointerId; look.x = e.clientX; look.y = e.clientY; look.t0 = performance.now(); look.moved = 0; look.mode = st.mode;
       if (st.mode === "slam") { st.charging = true; st.power = 0; }
       if (st.mode === "push") st.pushing = true;
     };
@@ -1230,7 +1257,7 @@ const Action = (() => {
       if (st.mode === "pull" || st.mode === "pullIn") strokeEnd();
       if (st.mode === "slam" && st.charging) slamRelease();
       st.pushing = false;
-      if (st.mode === "look" && !st.inspect && look.moved < 10 && performance.now() - look.t0 < 450) pickAt(e.clientX, e.clientY);
+      if (look.mode === "look" && st.mode === "look" && !st.inspect && look.moved < 10 && performance.now() - look.t0 < 450) pickAt(e.clientX, e.clientY);
   }
   function resetJoy() { joy.id = null; joy.dx = joy.dy = 0; const k = $("aKnob"); if (k) k.style.transform = ""; }
   function releaseAll() { keys.clear(); resetJoy(); look.id = null; if (st) { st.pushing = false; if (st.charging) st.charging = false; } }
@@ -1265,11 +1292,20 @@ const Action = (() => {
     return null;
   }
   // standing outside, facing the shop front, within reach → the shutter is what you grab
-  const facingShutter = () => !pIn() && st.z > -2.4 && Math.abs(st.x) < 1.6 && Math.abs(wrap(st.yaw - Math.PI)) < 0.9;
+  // next to the shutter or the door, "Action" does the next sensible thing, whichever way you face
+  function smartAim() {
+    if (!pIn()) return st.z > -3.0 && Math.abs(st.x) < 1.8 && st.shutter < 0.75 ? "shutter" : null;
+    if (!(st.x < 0.15 && st.z < 0.95)) return null;
+    const knock = st.phase === "night" && st.knock && st.knock.on && !st.knock.done;
+    if (knock) return st.locked ? "lock" : st.door !== "open" ? "door" : st.shutter >= 1 ? "shutter" : null;
+    if (st.door === "open" && st.shutter >= 0.75 && st.shutter < 1) return "shutter";
+    if (st.shutter >= 1 && st.phase === "evening") return st.door === "open" ? "door" : !st.locked ? "lock" : null;
+    return null;
+  }
   function pickAt(cx, cy) {
     const r = renderer.domElement.getBoundingClientRect();
     let hit = raycastId(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1, 8);
-    if ((!hit || hit.id !== "door") && facingShutter()) hit = { id: "shutter", d: 1 };
+    const sm = smartAim(); if (sm) hit = { id: sm, d: 1 };
     if (!hit) return;
     if (hit.d > 2.0) { say(`${NAMES[hit.id]}: подойди ближе.`, 2); return; }
     act(hit.id);
@@ -1355,17 +1391,19 @@ const Action = (() => {
     const f = fin, s = st, liters = s.shelvesTaken * 2.5;
     G.water += liters; if (s.cans) G.f.energy = 4;
     if (s.powerbank) G.charge = 100;
+    if (s.bag) G.food = Math.max(G.food, 1);
     G.f.shutter = true; G.f.door = true; G.f.dark = !s.lights;
     if (s.guest && !s.guest.bitten) { G.withGuest = true; G.guestName = "Даша"; G.guestBitten = false; }
     const tips = [
       { v: "good", t: "Ролета", tip: "Ролета — главная защита витрины. Опускать её тяжело и громко, поэтому делать это надо сразу, пока улица пуста." },
       { v: s.lights ? "bad" : "good", t: "Свет", tip: s.lights ? "Свет горел всю ночь. Полоски света под ролетой видно с кольца — к утру у витрины собрались." : "Темнота сделала магазин пустым для тех, кто снаружи." },
+      { v: s.bag ? "good" : "bad", t: "Еда", tip: s.bag ? "Свой перекус ты забрал. Этого хватит на день, дальше — вылазка за едой." : "Рюкзак с едой остался на столе. Вейп-шоп — это вода и энергетики, но не еда." },
       { v: liters ? "good" : "bad", t: "Вода", tip: liters ? `Ты забрал ${liters} л воды. Без крана и подсобки это вся твоя вода. ${s.cans ? "Энергетики не заменяют воду: кофеин и сахар усиливают обезвоживание." : ""}` : "Холодильник остался полным. Без крана и подсобки это была единственная вода." },
     ];
     tally(s.lights ? "bad" : "good", s.lights ? "Свет и вывеска горят" : "Свет и вывеска выключены");
     tally(liters >= 10 ? "good" : liters ? "mid" : "bad", liters ? `Забрать воду: ${liters} л` : "Не взять воду");
     stop();
-    f({ tone: s.lights || !liters ? "mid" : "good", out: `06:10. Ночь кончилась. Ты всё ещё в квадрате 2×2${s.guest && !s.guest.bitten ? ", Даша спит, сидя на полу" : ""}. ${liters ? `Воды ${liters} л, ` : "Воды нет, "}еды нет совсем.`, tips, r: { next: NEXT } });
+    f({ tone: s.lights || !liters ? "mid" : "good", out: `06:10. Ночь кончилась. Ты всё ещё в квадрате 2×2${s.guest && !s.guest.bitten ? ", Даша спит, сидя на полу" : ""}. ${liters ? `Воды ${liters} л, ` : "Воды нет, "}${s.bag ? "еды на один день." : "еды нет совсем."}`, tips, r: { next: NEXT } });
   }
 
   // ---------- simulation ----------
@@ -1384,7 +1422,7 @@ const Action = (() => {
     }
     const m = Math.hypot(ix, iz); if (m > 1) { ix /= m; iz /= m; }
     const quiet = st.sneak || keys.has("ShiftLeft") || keys.has("ShiftRight");
-    const sp = st.crouch ? 0.5 : quiet ? 0.6 : 1.5;
+    const sp = st.crouch ? 0.7 : quiet ? 0.6 : 1.5;
     st.moving = m > 0.1;
     st.x += ix * sp * dt; st.z += iz * sp * dt;
     const hit = collide();
@@ -1404,7 +1442,7 @@ const Action = (() => {
       if (!st.script.notif && st.t > 3) { st.script.notif = true; say("Телефон: «Симферополь. Нападения на людей на Москольце и Киевской. Не выходите на улицу». С кольца доносятся крики.", 6); }
       if (!st.script.chase && st.t > 8) { st.script.chase = true; const c = person(0x6fa0d0, false); st.civs.push({ g: c, x: -18, z: -2.7, v: 3.4 }); spawnZ(-21, -2.9, { state: "pursue", speed: 2.6 }); }
       st.spawnT -= dt;
-      if (st.t > 18 && st.spawnT <= 0 && st.zombies.length < 12) { st.spawnT = Math.max(3.5, 9 - st.t / 25); st.warns.push({ x: Math.random() < 0.5 ? -17 : 17, z: rnd(-12, -2.5), t: 1.5 }); }
+      if (!st.easy && st.t > 30 && st.spawnT <= 0 && st.zombies.length < 10) { st.spawnT = Math.max(5, 11 - st.t / 30); st.warns.push({ x: Math.random() < 0.5 ? -17 : 17, z: rnd(-12, -2.5), t: 1.5 }); }
       for (let i = st.warns.length - 1; i >= 0; i--) { const w = st.warns[i]; w.t -= dt; if (w.t <= 0) { spawnZ(w.x, w.z); st.warns.splice(i, 1); } }
       if (st.shutter >= 1 && st.locked && inside) {
         if (st.secureT == null) { st.secureT = st.t; say("Ролета в замке, дверь заперта. Удары с улицы глохнут. Можно собрать воду и выключить свет.", 5); tally("good", "Ролета опущена изнутри, до замка"); }
@@ -1431,7 +1469,7 @@ const Action = (() => {
       if (st.morningAt && st.t > st.morningAt && !st.zombies.some(z => z.inside)) { morning(); return; }
     }
     // --- gestures over time
-    if (st.mode === "slam" && st.charging) st.power += dt * 2.0;
+    if (st.mode === "slam" && st.charging) st.power += dt * 1.4;
     if (st.mode === "push" && st.pushing) {
       const before = st.push; st.push = Math.min(1, st.push + dt / 3.2);
       if (Math.floor(before * 5) !== Math.floor(st.push * 5)) noise(0.6, 0.6, 8);
@@ -1495,7 +1533,10 @@ const Action = (() => {
         if (Math.abs(ang) > 0.65 && (!warnTxt || d < warnTxt.d)) warnTxt = { d, side: Math.abs(ang) > 2.2 ? "back" : ang < 0 ? "right" : "left" };
       }
       if (d < 0.45) { die(z.inside ? (z.wasGuest ? "guest" : st.glassBroken ? "glass" : st.pushedOpen ? "door" : "touch") : !inside ? "outside" : "touch", z.inside ? "Оно тянется к тебе через весь магазин — это два шага. Спрятаться некуда." : !inside ? "Ты слишком долго возишься у ролеты. Чужая рука ложится на плечо." : "Холодные пальцы смыкаются на твоём запястье."); return; }
-      if (!z.inside && st.shutter >= 0.7 && st.shutter < 1 && st.door === "open" && inside && px < 0.05 && pz < 0.45 && Math.hypot(z.x + 0.5, z.z + 0.42) < 0.6) { die("gap", "Под ролетой щель. Из неё высовывается рука и хватает тебя за щиколотку."); return; }
+      const atGap = !z.inside && st.shutter >= 0.7 && st.shutter < 1 && st.door === "open" && Math.hypot(z.x + 0.5, z.z + 0.42) < 0.6;
+      z.gapT = atGap ? (z.gapT || 0) + dt : 0;
+      if (atGap && z.gapT > 0.5 && !z.gapSaid) { z.gapSaid = true; say("Под щелью шарканье — кто-то у ролеты! Дожимай или отойди от двери вглубь.", 3); }
+      if (atGap && z.gapT > 2.0 && inside && px < 0.05 && pz < 0.45) { die("gap", "Под ролетой щель. Из неё высовывается рука и хватает тебя за щиколотку."); return; }
     }
     for (const z of st.zombies) if (z.gone) scene.remove(z.g);
     st.zombies = st.zombies.filter(z => !z.gone);
@@ -1531,7 +1572,7 @@ const Action = (() => {
     flash.intensity = (st.phase === "night" || !st.lights) ? 1.3 : 0;
     if (st.phase === "night") fireL.intensity = 1.8 + Math.sin(now / 70) * 0.5;
     const goal = currentGoal();
-    const objMap = { shutter: O.shBar, door: O.door, lock: O.lock, switch: O.sw, fridge: O.fdoor, shelf: O.shelfR, pb: O.pb };
+    const objMap = { shutter: O.shBar, door: O.door, lock: O.lock, switch: O.sw, fridge: O.fdoor, shelf: O.shelfR, pb: O.pb, bag: O.bag };
     for (const [k, m] of Object.entries(objMap)) {
       const on = goal && goal.obj === k && st.mode === "look";
       m.traverse(o => { if (o.material && o.material.emissive && !o.userData.neon) { if (o.userData.baseE === undefined) { o.userData.baseE = o.material.emissive.getHex(); o.userData.baseI = o.material.emissiveIntensity; } o.material.emissive.setHex(on ? 0xf1b03f : o.userData.baseE); o.material.emissiveIntensity = on ? 0.35 + 0.35 * Math.sin(now / 160) : o.userData.baseI; } });
@@ -1539,7 +1580,7 @@ const Action = (() => {
     renderer.render(scene, cam);
     // aim (what is under the crosshair)
     const hit = st.mode === "look" && !st.inspect ? raycastId(0, 0, 2.0) : null;
-    st.aim = hit && hit.id === "door" ? "door" : facingShutter() ? "shutter" : hit ? hit.id : null;
+    st.aim = smartAim() || (hit ? hit.id : null);
     const aimEl = $("aAim"), ab = $("bAct"), vb = st.aim && verb(st.aim);
     if (st.aim && vb) { aimEl.hidden = false; const t = `${isTouch ? "" : "E · "}${NAMES[st.aim]}: ${vb}`; if (aimEl.textContent !== t) aimEl.textContent = t; ab.disabled = false; ab.textContent = vb.length > 16 ? NAMES[st.aim] : vb[0].toUpperCase() + vb.slice(1); }
     else { aimEl.hidden = true; ab.disabled = true; ab.textContent = "Действие"; }
@@ -1565,18 +1606,19 @@ const Action = (() => {
     const out = !pIn();
     if (st.phase === "evening") {
       if (st.shutter < 0.75) {
-        if (out) return { obj: "shutter", short: "Ролета: подойди и нажми", text: "Подойди к ролете и нажми на неё — потом тяни вниз." };
-        if (st.door !== "open") return { obj: "door", short: "Дверь: открой", text: "Открой дверь, чтобы выйти к ролете." };
-        return { at: [-0.5, 1.1, -0.1], short: "Выход: иди сюда", text: "Выйди на улицу через дверь — ролета снаружи." };
+        if (out) return { n: st.mode === "pull" ? 3 : 2, obj: "shutter", short: "Ролета: нажми «Действие»", text: st.mode === "pull" ? "Проводи пальцем сверху вниз, много раз, пока ролета не щёлкнет на уровне колена." : "Стой лицом к витрине и нажми «Действие» — возьмёшься за ролету." };
+        if (st.door !== "open") return { n: 1, obj: "door", short: "Дверь: открой", text: "Открой дверь, чтобы выйти к ролете." };
+        return { n: 1, at: [-0.5, 1.1, -0.1], short: "Выход: иди сюда", text: "Иди джойстиком в дверь — ролета снаружи, над витриной." };
       }
       if (st.shutter < 1) {
-        if (out) return { at: [-0.5, 0.45, -0.24], short: st.crouch ? "Пролезай здесь" : "Присядь и пролезь здесь", text: st.crouch ? "Пролезай под ролету в дверь." : "Присядь (кнопка «Присесть» / C) и пролезь под ролету в дверь." };
-        return { obj: "shutter", short: "Планка: дожми", text: "Подойди к двери и нажми на нижнюю планку ролеты — дожми рывком." };
+        if (out) return { n: 4, at: [-0.5, 0.45, -0.24], short: st.crouch ? "Пролезай здесь" : "Присядь и пролезь здесь", text: st.crouch ? "Иди вперёд в дверь — под ролету, внутрь." : "Нажми «Присесть» и иди в дверь под ролету. Стоя не пролезть." };
+        return { n: 5, obj: "shutter", short: "Планка: «Действие»", text: st.mode === "slam" ? "Зажми палец на экране и отпусти, когда белая черта в зелёной зоне." : st.crouch ? "Нажми «Встать», повернись к двери и нажми «Действие» на нижней планке." : "Стой у двери лицом к улице, нажми «Действие» — дожмёшь ролету рывком." };
       }
-      if (st.door === "open") return { obj: "door", short: "Дверь: закрой", text: "Закрой дверь — нажми на неё." };
-      if (!st.locked) return { obj: "lock", short: "Замок: ключ", text: "Нажми на замок и поверни ключ." };
+      if (st.door === "open") return { n: 6, obj: "door", short: "Дверь: закрой", text: "Нажми «Действие» на двери — закроется." };
+      if (!st.locked) return { n: 6, obj: "lock", short: "Замок: ключ", text: st.mode === "lock" ? "Проведи пальцем вправо два раза." : "Нажми «Действие» ещё раз — возьмёшься за ключ. Потом проведи пальцем вправо два раза." };
       if (st.lights) return { obj: "switch", short: "Свет: выключи", text: "Выключи свет — выключатель слева у двери." };
       if (st.shelvesTaken < 6) return { obj: "fridge", short: "Вода: забирай", text: "Забери воду из холодильника — по полке за нажатие." };
+      if (!st.bag) return { obj: "bag", short: "Рюкзак: еда", text: "Возьми свой рюкзак со стола — там еда на день." };
       return null;
     }
     if (st.knock && st.knock.on && !st.inspect) { if (st.locked) return { obj: "lock", short: "Замок: отпереть", text: "Хочешь проверить — отопри замок." }; if (st.door !== "open") return { obj: "door", short: "Дверь: открой", text: "Открой дверь." }; return { obj: "shutter", short: "Ролета: приподнять", text: "Нажми на ролету — приподнять на ладонь и проверить." }; }
@@ -1589,9 +1631,11 @@ const Action = (() => {
     const lt = st.scratch && st.scratch.on ? (st.scratch.noise > 0.5 ? "оно прислушивается" : "замри") : L > 0.66 ? "грохот" : L > 0.25 ? "слышно" : st.moving && (quiet || st.crouch) ? "крадёшься" : "тихо";
     if ($("aLoudT").textContent !== lt) $("aLoudT").textContent = lt;
     const goal = currentGoal();
+    const sb = $("aSteps");
+    if (goal && goal.n && st.phase === "evening") { sb.hidden = false; const t = `<b>Шаг ${goal.n} из 6</b> ${goal.text}`; if (sb.innerHTML !== t) sb.innerHTML = t; } else sb.hidden = true;
     const step = st.inspect ? "Веди фонарик по кистям, предплечьям и шее. Потом реши." : st.scratch && st.scratch.on ? "Не ходи и не трогай экран. Любое движение — шум." : goal ? "Сейчас: " + goal.text : st.phase === "evening" ? "Закрыто. Ночь скоро. Можно задвинуть стеллаж к витрине и взять пауэрбанк." : "Жди. Слушай.";
     const se = $("aStep"); if (se.textContent !== step) se.textContent = step;
-    const o = st.phase === "evening" ? [[st.shutter >= 1, "Ролета до замка"], [st.locked, "Дверь на ключ"], [!st.lights, "Свет и вывеска"], [st.shelvesTaken >= 6, `Вода ${st.shelvesTaken}/6 полок`], [st.barricaded, "Стеллаж к витрине"], [st.powerbank, "Пауэрбанк"]]
+    const o = st.phase === "evening" ? [[st.shutter >= 1, "Ролета до замка"], [st.locked, "Дверь на ключ"], [!st.lights, "Свет и вывеска"], [st.shelvesTaken >= 6, `Вода ${st.shelvesTaken}/6 полок`], [st.barricaded, "Стеллаж к витрине"], [st.powerbank, "Пауэрбанк"], [st.bag, "Еда: твой рюкзак"]]
       : [[st.knock && st.knock.done, "Стук: решить"], [st.scratch && st.scratch.done, "Скрежет: замереть"]];
     const html = o.map(([ok, t]) => `<li class="${ok ? "ok" : ""}">${t}</li>`).join(""); const ob = $("aObj"); if (ob.innerHTML !== html) ob.innerHTML = html;
     const bc = $("bCrouch"); bc.classList.toggle("on", st.crouch); bc.classList.toggle("glow", !!(goal && goal.at && goal.at[1] < 0.6 && !st.crouch)); bc.textContent = st.crouch ? "Встать" : "Присесть";
