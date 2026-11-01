@@ -177,6 +177,17 @@ body {
 .intro span { color: #cfcbc1; }
 .step { font-family: var(--f-mono); font-size: 13px; color: var(--warn); min-height: 1.4em; }
 .gest[hidden], .tlabel[hidden], .edgew[hidden], .insp[hidden], .intro[hidden] { display: none; }
+.aimtip { position: absolute; left: 50%; top: calc(50% + 14px); transform: translateX(-50%); background: rgba(10,12,18,.85); border: 1px solid var(--warn); color: var(--ink); font-family: var(--f-mono); font-size: 12px; padding: 3px 8px; border-radius: 6px; pointer-events: none; white-space: nowrap; }
+.joy { position: absolute; left: 18px; bottom: 18px; width: 110px; height: 110px; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); background: rgba(10,12,18,.35); pointer-events: none; }
+.joy i { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(241,176,63,.55); border: 2px solid var(--warn); }
+.rbtns { position: absolute; right: 12px; bottom: 14px; display: grid; gap: 8px; justify-items: end; }
+.rb { pointer-events: auto; font-family: var(--f-mono); font-size: 12px; color: var(--ink); background: rgba(10,12,18,.8); border: 1px solid var(--line); border-radius: 22px; padding: 10px 14px; cursor: pointer; min-width: 96px; }
+.rb.act { font-family: var(--f-display); font-size: 14px; background: var(--warn); color: #15110a; border-color: var(--warn); min-width: 120px; padding: 14px 16px; }
+.rb.act:disabled { background: rgba(10,12,18,.6); color: var(--muted); border-color: var(--line); }
+.rb.on { border-color: var(--ok); color: var(--ok); }
+.rb.glow { background: var(--warn); color: #15110a; border-color: var(--warn); animation: ghold 1s infinite; }
+.intro .k { font-family: var(--f-mono); font-size: 13px; color: var(--warn); font-weight: 400; }
+.joy[hidden], .rbtns[hidden], .aimtip[hidden] { display: none; }
 .meter { display: flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
 .meter b { font-weight: 400; color: var(--ink); }
 .meter .nbar i { transition: width .1s linear; }
@@ -821,11 +832,6 @@ S.vapeAction = { label: "Смена", action: true, place: g => g.loc.place, clo
 const Action = (() => {
   const isTouch = matchMedia("(pointer: coarse)").matches;
   const SH_TOP = 2.55;
-  const SPOT = {
-    in:   { x: 0.05, y: 1.6, z: 1.2, yaw: 0, pitch: -0.08 },
-    door: { x: -0.45, y: 1.5, z: 0.6, yaw: 0, pitch: -0.42 },
-    out:  { x: -0.35, y: 1.6, z: -1.9, yaw: Math.PI, pitch: -0.05 },
-  };
   let T = null, st = null, fin = null, raf = 0, last = 0;
   let renderer, scene, cam, flash, inLight, hemi, fireL, lamps = [], O = {};
   const rnd = (a, b) => a + Math.random() * (b - a);
@@ -923,34 +929,47 @@ const Action = (() => {
     O.neon = new T.Mesh(new T.PlaneGeometry(1.0, 0.38), new T.MeshBasicMaterial({ map: neonTex, transparent: true, color: 0xffffff })); O.neon.position.set(-0.4, 3.0, -0.32); O.neon.rotation.y = Math.PI; scene.add(O.neon);
     // left shelf with liquids
     const wood = M(0x5a4636);
-    box(0.03, 2.0, 1.4, wood, -0.99, 1.0, 1.05);
+    box(0.03, 2.0, 1.3, wood, -0.99, 1.0, 1.0);
     const cols = [0xe8417a, 0x38c6d9, 0xf2c14e, 0x7cdd6a, 0xa070ff, 0xff8a3d];
-    for (let s = 0; s < 4; s++) { const y = 0.35 + s * 0.45; box(0.3, 0.02, 1.4, wood, -0.85, y, 1.05); for (let i = 0; i < 11; i++) box(0.05, 0.11, 0.05, M(cols[(i + s) % 6], { emissive: cols[(i + s) % 6], emissiveIntensity: 0.15 }), -0.85 + rnd(-0.06, 0.06), y + 0.065, 0.42 + i * 0.12); }
+    for (let s = 0; s < 4; s++) { const y = 0.35 + s * 0.45; box(0.3, 0.02, 1.3, wood, -0.85, y, 1.0); for (let i = 0; i < 10; i++) box(0.05, 0.11, 0.05, M(cols[(i + s) % 6], { emissive: cols[(i + s) % 6], emissiveIntensity: 0.15 }), -0.85 + rnd(-0.06, 0.06), y + 0.065, 0.42 + i * 0.12); }
     // right shelf with disposables (movable → barricade)
-    O.shelfR = new T.Group(); O.shelfR.position.set(0.84, 0, 0.85); scene.add(O.shelfR);
+    O.shelfR = new T.Group(); O.shelfR.position.set(0.84, 0, 0.78); scene.add(O.shelfR);
     box(0.03, 1.8, 0.9, wood, 0.15, 0.9, 0, O.shelfR);
     for (let s = 0; s < 4; s++) { const y = 0.3 + s * 0.42; box(0.3, 0.02, 0.9, wood, 0, y, 0, O.shelfR); for (let i = 0; i < 7; i++) box(0.04, 0.12, 0.03, M(cols[(i * 2 + s) % 6]), rnd(-0.08, 0.08), y + 0.07, -0.38 + i * 0.125, O.shelfR); }
     tag(O.shelfR, "shelf");
-    // counter + powerbank
-    box(1.0, 1.0, 0.4, M(0x2c2a33), -0.15, 0.5, 1.78);
-    box(1.0, 0.02, 0.4, new T.MeshStandardMaterial({ color: 0xaad4f0, transparent: true, opacity: 0.35 }), -0.15, 1.01, 1.78);
-    for (let i = 0; i < 9; i++) box(0.04, 0.1, 0.03, M(cols[i % 6], { emissive: cols[i % 6], emissiveIntensity: 0.3 }), -0.6 + i * 0.1, 0.92, 1.75);
-    O.pb = tag(box(0.14, 0.035, 0.08, M(0x111317), -0.0 + 0.25, 1.04, 1.7), "pb");
-    // mini fridge
-    tag(box(0.45, 0.85, 0.45, M(0xdfe5ea), 0.74, 0.425, 1.76), "fridge");
-    box(0.4, 0.76, 0.01, M(0xbfe6ff, { emissive: 0x9fd8ff, emissiveIntensity: 0.7 }), 0.74, 0.43, 1.535);
-    O.bottles = new T.Group(); scene.add(O.bottles);
-    for (let i = 0; i < 6; i++) { const b = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 0.2, 10), new T.MeshStandardMaterial({ color: 0xdff2ff, transparent: true, opacity: 0.8 })); b.position.set(0.6 + (i % 3) * 0.1, 0.6, 1.63 + Math.floor(i / 3) * 0.08); O.bottles.add(b); }
-    for (let i = 0; i < 4; i++) { const c = new T.Mesh(new T.CylinderGeometry(0.032, 0.032, 0.13, 10), M(i % 2 ? 0x2ad16e : 0xff6a3d, { metalness: 0.6 })); c.position.set(0.6 + i * 0.09, 0.2, 1.65); O.bottles.add(c); }
-    tag(O.bottles, "fridge");
-    O.fdoor = new T.Group(); O.fdoor.position.set(0.515, 0, 1.53); scene.add(O.fdoor);
-    box(0.45, 0.82, 0.02, new T.MeshStandardMaterial({ color: 0xd8eef8, transparent: true, opacity: 0.35 }), 0.225, 0.43, 0, O.fdoor); tag(O.fdoor, "fridge");
+    // table (you can crawl under it) + powerbank
+    const tableM = M(0x2c2a33);
+    box(1.0, 0.04, 0.5, tableM, -0.2, 0.9, 1.75);
+    for (const [lx, lz] of [[-0.67, 1.53], [0.27, 1.53], [-0.67, 1.97], [0.27, 1.97]]) box(0.04, 0.9, 0.04, tableM, lx, 0.45, lz);
+    box(0.98, 0.5, 0.02, tableM, -0.2, 0.62, 1.99);
+    box(0.9, 0.12, 0.3, new T.MeshStandardMaterial({ color: 0xaad4f0, transparent: true, opacity: 0.35 }), -0.2, 0.98, 1.82);
+    for (let i = 0; i < 8; i++) box(0.04, 0.09, 0.03, M(cols[i % 6], { emissive: cols[i % 6], emissiveIntensity: 0.3 }), -0.55 + i * 0.1, 0.97, 1.82);
+    O.pb = tag(box(0.14, 0.035, 0.08, M(0x111317), 0.15, 0.94, 1.62), "pb");
+    // tall drinks fridge: 6 shelves of water + energy drinks in the door
+    tag(box(0.56, 1.95, 0.58, M(0xe4e8ec), 0.71, 0.975, 1.71), "fridge");
+    box(0.5, 1.82, 0.01, M(0xc8ecff, { emissive: 0x9fd8ff, emissiveIntensity: 0.6 }), 0.71, 0.98, 1.425);
+    O.shelves = [];
+    for (let sh = 0; sh < 6; sh++) {
+      const y = 0.18 + sh * 0.29, grp = new T.Group(); scene.add(grp); O.shelves.push(grp);
+      box(0.5, 0.015, 0.5, new T.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 }), 0.71, y, 1.7, grp);
+      for (let i = 0; i < 5; i++) { const b = new T.Mesh(new T.CylinderGeometry(0.035, 0.035, 0.22, 10), new T.MeshStandardMaterial({ color: 0xdff2ff, transparent: true, opacity: 0.85 })); b.position.set(0.52 + i * 0.095, y + 0.12, 1.55); grp.add(b); const cap = new T.Mesh(new T.CylinderGeometry(0.02, 0.02, 0.03, 8), M(0x2f7ad9)); cap.position.set(0, 0.125, 0); b.add(cap); }
+      tag(grp, "fridge");
+    }
+    O.cans = new T.Group(); scene.add(O.cans);
+    O.fdoor = new T.Group(); O.fdoor.position.set(0.43, 0, 1.415); scene.add(O.fdoor);
+    box(0.56, 1.9, 0.025, new T.MeshStandardMaterial({ color: 0xd8eef8, transparent: true, opacity: 0.28 }), 0.28, 0.98, 0, O.fdoor);
+    box(0.03, 0.5, 0.04, M(0xc0c4c8, { metalness: 0.6 }), 0.52, 1.1, -0.03, O.fdoor);
+    for (let i = 0; i < 4; i++) { const c = new T.Mesh(new T.CylinderGeometry(0.032, 0.032, 0.13, 10), M(i % 2 ? 0x2ad16e : 0xff6a3d, { metalness: 0.6 })); c.position.set(0.1 + i * 0.1, 0.5, 0.05); O.fdoor.add(c); O.cans.add; }
+    tag(O.fdoor, "fridge");
+    const fl = ctex(256, 64, (c, w, h) => { c.fillStyle = "#1a5fb4"; c.fillRect(0, 0, w, h); c.font = "bold 34px sans-serif"; c.fillStyle = "#fff"; c.textAlign = "center"; c.fillText("ВОДА · 0,5", w / 2, 44); });
+    const fp = new T.Mesh(new T.PlaneGeometry(0.5, 0.12), new T.MeshBasicMaterial({ map: fl })); fp.position.set(0.71, 1.89, 1.41); fp.rotation.y = Math.PI; scene.add(fp);
     // light switch
     O.sw = tag(box(0.03, 0.12, 0.08, M(0xf0f0f0), -0.995, 1.3, 0.22), "switch");
     O.ceil = box(0.6, 0.02, 0.6, M(0xffffff, { emissive: 0xf0e0ff, emissiveIntensity: 1 }), 0, 2.74, 1);
   }
 
   // ---------- state & UI ----------
+  const EYE = 1.6, EYE_CROUCH = 0.62, R = 0.22;
   function start(g, done) {
     fin = done; T = window.THREE;
     const b = $("body");
@@ -959,28 +978,34 @@ const Action = (() => {
       $("aSkip").onclick = () => { G.water = 3; done({ tone: "mid", out: "Ночь прошла за опущенной ролетой.", tips: [], r: { next: NEXT } }); };
       return;
     }
-    st = { phase: "evening", t: 0, paused: true, spot: "in", yaw: 0, pitch: -0.08, move: null, mode: "look",
-      door: "open", doorAng: -1.35, locked: false, keyTurn: 0, shutter: 0, lastPull: -9, stroke: 0, lights: true, glass: 100, glassBroken: false,
-      push: 0, barricaded: false, fridgeOpen: false, fridge: false, powerbank: false, sneak: false, loud: 0, power: 0, charging: false,
-      zombies: [], civs: [], warns: [], spawnT: 20, say: "", doorPush: 0, script: {}, knock: null, inspect: null, guest: null, scratch: null, dead: false, secureT: null };
+    st = { phase: "evening", t: 0, paused: true, x: 0.05, z: 1.15, eye: EYE, yaw: 0, pitch: -0.08, crouch: false, sneak: false, mode: "look",
+      door: "open", doorAng: -1.35, locked: false, turn: 0, shutter: 0, lastPull: -9, stroke: 0, lights: true, glass: 100, glassBroken: false,
+      push: 0, barricaded: false, fridgeOpen: false, shelvesTaken: 0, cans: false, powerbank: false, loud: 0, power: 0, charging: false,
+      zombies: [], civs: [], warns: [], spawnT: 20, say: "", doorPush: 0, script: {}, knock: null, inspect: null, guest: null, scratch: null, dead: false, secureT: null,
+      stepT: 0, bumpCd: 0, aim: null, hidden: false, moving: false };
     b.innerHTML = `<div class="act">
       <div class="say" id="aSay">20:47. Обычная смена. За стеклом шумит Москольцо.</div>
       <div class="stage" id="aStage">
         <div class="gl" id="aGL"></div>
         <div class="cross"></div>
+        <div class="aimtip" id="aAim" hidden></div>
         <div class="tlabel" id="aLabel" hidden></div>
         <div class="edgew" id="aEdge" hidden></div>
         <div class="vign" id="aVig"></div>
+        <div class="joy" id="aJoy" ${isTouch ? "" : "hidden"}><i id="aKnob"></i></div>
+        <div class="rbtns" id="aBtns">
+          <button type="button" class="rb act" id="bAct" disabled>Действие</button>
+          <button type="button" class="rb" id="bCrouch">Присесть</button>
+          <button type="button" class="rb" id="bSneak">Тихо</button>
+        </div>
         <div class="gest" id="aGest" hidden></div>
         <canvas class="insp" id="aInspCv" hidden></canvas>
         <div class="ibtns" id="aInsp" hidden><button class="btn" id="aLet" type="button">Впустить</button><button class="btn red" id="aDeny" type="button">Опустить ролету</button></div>
-        <div class="nav" id="aNav"></div>
         <div class="intro" id="aIntro">
-          <b>Ты внутри своего вейп-шопа</b>
-          <span>${isTouch ? "Веди пальцем по экрану" : "Тяни мышкой"} — смотреть по сторонам.</span>
-          <span>Нажми на предмет — действие с ним. Подсвеченный предмет — что делать сейчас.</span>
-          <span>Кнопки внизу — выйти, зайти, идти тихо.</span>
-          <span>Всё, что гремит, слышат снаружи. Следи за шкалой шума.</span>
+          <b>Управление</b>
+          ${isTouch ? `<span><b class="k">Джойстик слева</b> — идти.</span><span><b class="k">Палец справа</b> — смотреть по сторонам.</span><span><b class="k">Нажми на предмет</b> или кнопку «Действие», когда он под прицелом.</span><span><b class="k">Присесть</b> — пролезть под ролетой или спрятаться под стол. <b class="k">Тихо</b> — медленно, без шума.</span>`
+            : `<span><b class="k">W A S D</b> — идти.</span><span><b class="k">Мышь с зажатой кнопкой</b> — смотреть.</span><span><b class="k">Клик по предмету</b> или <b class="k">E</b> — действие.</span><span><b class="k">C</b> — присесть (под ролету, под стол). <b class="k">Shift</b> — идти тихо.</span>`}
+          <span>Жёлтая подпись показывает, что делать сейчас. Всё, что гремит, слышат снаружи.</span>
           <button class="btn red" id="aGo" type="button">Понятно, играть</button>
         </div>
       </div>
@@ -989,10 +1014,12 @@ const Action = (() => {
       <ul class="obj" id="aObj"></ul>
     </div>`;
     build($("aGL"));
-    setCam(SPOT.in);
     bindInput();
     $("aGo").onclick = () => { $("aIntro").hidden = true; st.paused = false; last = performance.now(); };
     $("aLet").onclick = () => endInspect(true); $("aDeny").onclick = () => endInspect(false);
+    $("bAct").onclick = e => { e.stopPropagation(); if (st.aim) act(st.aim); };
+    $("bCrouch").onclick = e => { e.stopPropagation(); toggleCrouch(); };
+    $("bSneak").onclick = e => { e.stopPropagation(); st.sneak = !st.sneak; };
     last = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
   }
   function stop() {
@@ -1000,100 +1027,122 @@ const Action = (() => {
     if (renderer) { renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss(); renderer = null; }
     st = null; scene = null;
   }
-  function setCam(s) { cam.position.set(s.x, s.y, s.z); st.yaw = s.yaw; st.pitch = s.pitch; }
   function say(text, t = 4) { st.say = text; const el = $("aSay"); if (el) { el.innerHTML = text; el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); } }
-  const pIn = () => cam.position.z > -0.1;
+  const pIn = () => st.z > -0.1;
   function noise(x, z, r) {
     if (z > -0.1 && st.shutter >= 1) r *= 0.5;
     st.loud = Math.min(1.4, st.loud + r / 14);
     for (const zb of st.zombies) if (!zb.inside && zb.state !== "chase" && zb.state !== "pursue" && Math.hypot(zb.x - x, zb.z - z) < r) { zb.state = "seek"; zb.tx = x + rnd(-0.5, 0.5); zb.tz = Math.min(-0.5, z); }
     if (st.scratch && st.scratch.on) st.scratch.noise += r / 10;
   }
+  function toggleCrouch() {
+    if (st.crouch && underTable()) { say("Над головой стол — встать не получится. Сначала вылези."); return; }
+    if (st.crouch && underShutter()) { say("Над головой ролета. Сначала пролезь."); return; }
+    st.crouch = !st.crouch;
+  }
 
-  // ---------- movement between spots ----------
-  function goTo(path, endSpot, dur, crawl) {
-    const pts = [[cam.position.x, cam.position.y, cam.position.z], ...path, [SPOT[endSpot].x, SPOT[endSpot].y, SPOT[endSpot].z]];
-    st.move = { pts, t: 0, dur, end: endSpot, yaw0: st.yaw, pitch0: st.pitch, crawl };
-    st.spot = "moving"; st.mode = "look"; hideGest();
-    if (!st.sneak && !crawl) { noise(cam.position.x, cam.position.z, 4); if (pIn() && endSpot !== "out" && Math.random() < 0.3) bump(); }
+  // ---------- world collision (top view, metres) ----------
+  const underTable = () => st.x > -0.72 && st.x < 0.32 && st.z > 1.48 && st.z < 2.0;
+  const underShutter = () => st.x > -1.1 && st.x < 1.1 && st.z > -0.5 && st.z < 0.0;
+  function rects() {
+    const L = [
+      [-14, -1.05, -0.32, 0], [1.05, 14, -0.32, 0],            // facade
+      [-1.05, -0.9, -0.1, 0], [-0.1, 0.05, -0.1, 0], [0.95, 1.05, -0.1, 0], // front wall pieces
+      [-1.2, -1.0, 0, 2.1], [1.0, 1.2, 0, 2.1], [-1.1, 1.1, 2.0, 2.2],   // side + back walls
+      [-1.0, -0.68, 0.35, 1.65],                                // liquids shelf
+      [0.42, 1.0, 1.4, 2.0],                                    // fridge
+      st.barricaded ? [0.05, 0.95, 0.1, 0.42] : [0.66, 1.0, 0.33, 1.23], // disposables shelf
+    ];
+    if (!st.glassBroken || st.barricaded) L.push([0.05, 0.95, -0.1, 0]);
+    if (st.door !== "open") L.push([-0.9, -0.1, -0.1, 0]);
+    if (!st.crouch) L.push([-0.72, 0.32, 1.5, 2.0]);          // table: only crouching gets under it
+    if (st.shutter >= 0.95 || (st.shutter >= 0.6 && !st.crouch)) L.push([-1.1, 1.1, -0.28, -0.2]);
+    return L;
+  }
+  const FURN = 3;  // first furniture index after walls is 8 → used for bump detection
+  function collide() {
+    let hitFurn = false;
+    const L = rects();
+    for (let i = 0; i < L.length; i++) {
+      const [x0, x1, z0, z1] = L[i];
+      const nx = Math.max(x0, Math.min(x1, st.x)), nz = Math.max(z0, Math.min(z1, st.z)), dx = st.x - nx, dz = st.z - nz, d2 = dx * dx + dz * dz;
+      if (d2 >= R * R) continue;
+      if (i >= 8 && i <= 10) hitFurn = true;
+      if (d2 === 0) { const l = st.x - x0, r = x1 - st.x, t = st.z - z0, b = z1 - st.z, m = Math.min(l, r, t, b); if (m === l) st.x = x0 - R; else if (m === r) st.x = x1 + R; else if (m === t) st.z = z0 - R; else st.z = z1 + R; }
+      else { const d = Math.sqrt(d2); st.x = nx + dx / d * R; st.z = nz + dz / d * R; }
+    }
+    st.x = Math.max(-13.5, Math.min(13.5, st.x)); st.z = Math.max(-8.5, Math.min(1.8, st.z));
+    return hitFurn;
   }
   function bump() {
-    noise(cam.position.x, cam.position.z, 10); st.bumps = (st.bumps || 0) + 1;
-    say(pick(["Плечом в стеллаж — жижи с грохотом сыплются на пол!", "Задела угол стеллажа. Одноразки разлетаются по плитке.", "Звон стекла: с полки упали флаконы. Снаружи кто-то повернул голову."]).replace("Задела", "Задет"), 3);
+    noise(st.x, st.z, 10); st.bumps = (st.bumps || 0) + 1;
+    say(pick(["Плечом в стеллаж — жижи с грохотом сыплются на пол!", "Задет угол стеллажа. Одноразки разлетаются по плитке.", "Звон стекла: с полки упали флаконы. Снаружи кто-то повернул голову."]), 3);
     if (st.bumps === 1) tally("bad", "Спешить в тесном магазине и задеть стеллаж");
-  }
-  function navOut() {
-    if (st.door !== "open") { say("Дверь закрыта. Сначала нажми на дверь."); return; }
-    if (st.shutter >= 0.95) { say("Ролета опущена до конца. Наружу не выйти."); return; }
-    const crawl = st.shutter >= 0.6;
-    goTo(crawl ? [[-0.5, 0.45, 0.3], [-0.5, 0.4, -0.15], [-0.5, 0.45, -0.7]] : [[-0.5, 1.6, 0.2], [-0.5, 1.6, -0.5]], "out", (crawl ? 2.6 : 1.1) * (st.sneak ? 1.8 : 1), crawl);
-  }
-  function navIn() {
-    if (st.door !== "open") { say("Дверь закрыта. Нажми на дверь, чтобы открыть."); return; }
-    if (st.shutter >= 0.95) { say("Ролета опущена до конца — ты снаружи."); return; }
-    const crawl = st.shutter >= 0.6;
-    if (crawl) goTo([[-0.5, 1.4, -1.0], [-0.5, 0.45, -0.75], [-0.5, 0.4, -0.1], [-0.5, 0.5, 0.45]], "door", 2.8 * (st.sneak ? 1.6 : 1), true);
-    else goTo([[-0.5, 1.6, -0.5], [-0.5, 1.6, 0.25]], "in", 1.1 * (st.sneak ? 1.8 : 1));
-  }
-  function ensureAt(spot, then) {
-    if (st.spot === spot) { then(); return; }
-    if (spot === "door" && st.spot === "in") { goTo([], "door", st.sneak ? 0.9 : 0.5); st.after = then; return; }
-    if (spot === "in" && st.spot === "door") { goTo([], "in", st.sneak ? 0.9 : 0.5); st.after = then; return; }
-    then();
   }
 
   // ---------- actions on objects ----------
-  function act(id) {
-    if (st.move || st.dead) return;
-    const out = st.spot === "out";
-    const insideOnly = msg => { if (out) { say(msg || "Отсюда не дотянуться — ты на улице."); return true; } return false; };
+  const NAMES = { switch: "Выключатель", pb: "Пауэрбанк", fridge: "Холодильник", shelf: "Стеллаж с одноразками", door: "Дверь", lock: "Замок", shutter: "Ролета" };
+  function verb(id) {
+    const out = !pIn();
     switch (id) {
-      case "switch": if (insideOnly()) return; ensureAt("in", () => { st.lights = !st.lights; noise(cam.position.x, cam.position.z, 0.5); say(st.lights ? "Свет включён. Магазин светится на всё кольцо." : "Щёлк. Свет и неон VAPE над дверью гаснут. С улицы тебя больше не видно."); }); return;
-      case "pb": if (insideOnly()) return; if (!st.powerbank) { st.powerbank = true; O.pb.visible = false; say("Пауэрбанк на 20 000 — в карман. Телефон проживёт пару суток."); } return;
-      case "fridge": if (insideOnly()) return;
-        if (!st.fridgeOpen) { st.fridgeOpen = true; say("Холодильник открыт: 6 бутылок воды и 4 энергетика. Нажми ещё раз — забрать."); }
-        else if (!st.fridge) { st.fridge = true; O.bottles.visible = false; say("Всё в рюкзак: 3 литра воды и 4 энергетика. Это вся вода — крана тут нет."); }
+      case "switch": return st.lights ? "выключить свет" : "включить свет";
+      case "pb": return st.powerbank ? null : "взять";
+      case "fridge": return !st.fridgeOpen ? "открыть" : st.shelvesTaken < 6 ? `взять воду (полка ${st.shelvesTaken + 1} из 6)` : !st.cans ? "взять энергетики" : "пусто";
+      case "shelf": return st.barricaded || st.phase !== "evening" ? null : "толкать к витрине";
+      case "door": return st.door === "open" ? "закрыть" : st.locked ? "заперто" : "открыть";
+      case "lock": return out ? null : st.door === "open" ? "сначала закрой дверь" : st.locked ? "отпереть" : "запереть на ключ";
+      case "shutter": if (out) return st.shutter < 0.75 ? "тянуть вниз" : "снаружи не дожать"; if (st.door !== "open") return "за дверью"; if (st.phase === "night" && st.knock && st.knock.on && !st.knock.done && st.shutter >= 1) return "приподнять и проверить"; return st.shutter < 0.75 ? "тянуть за планку" : st.shutter < 1 ? "дожать до замка" : "в замке";
+    }
+    return null;
+  }
+  function act(id) {
+    if (st.dead || st.mode !== "look" || st.inspect) return;
+    const out = !pIn();
+    switch (id) {
+      case "switch": st.lights = !st.lights; noise(st.x, st.z, 0.5); say(st.lights ? "Свет включён. Магазин светится на всё кольцо." : "Щёлк. Свет и неон VAPE над дверью гаснут. Теперь с улицы тебя почти не видно."); return;
+      case "pb": if (!st.powerbank) { st.powerbank = true; O.pb.visible = false; say("Пауэрбанк на 20 000 — в карман. Телефон проживёт пару суток."); } return;
+      case "fridge":
+        if (!st.fridgeOpen) { st.fridgeOpen = true; noise(st.x, st.z, 0.6); say("Холодильник открыт: 6 полок воды по 5 бутылок и энергетики в двери. Нажимай — забирай по полке. Бутылки звенят."); }
+        else if (st.shelvesTaken < 6) { O.shelves[st.shelvesTaken].children.slice(1).forEach(c => c.visible = false); st.shelvesTaken++; noise(st.x, st.z, 1.8); say(`Полка ${st.shelvesTaken} из 6: пять бутылок в рюкзак. Воды: ${st.shelvesTaken * 2.5} л.${st.shelvesTaken === 6 ? " Холодильник пуст." : ""}`, 3); }
+        else if (!st.cans) { st.cans = true; O.fdoor.children.slice(2).forEach(c => c.visible = false); noise(st.x, st.z, 1); say("Энергетики тоже в рюкзак. Но они не заменяют воду."); }
         return;
-      case "shelf": if (insideOnly()) return;
-        if (st.barricaded) { say("Стеллаж уже стоит у витрины."); return; }
-        if (st.phase !== "evening") return;
-        ensureAt("in", () => openGest("push")); return;
+      case "shelf": if (!verb("shelf")) return; openGest("push"); return;
       case "door":
-        if (st.door === "open") { ensureAt(out ? "out" : "door", () => { st.door = "closed"; noise(-0.5, -0.1, 2); say(out ? "Дверь закрыта. Но ты снаружи!" : "Дверь закрыта. Теперь нажми на замок и поверни ключ."); }); }
-        else if (st.locked) say("Заперто. Чтобы открыть — нажми на замок и поверни ключ обратно.");
-        else ensureAt(out ? "out" : "door", () => { st.door = "open"; noise(-0.5, -0.1, 2); say("Дверь открыта."); });
+        if (st.locked) { say("Заперто. Чтобы открыть — нажми на замок и поверни ключ обратно."); return; }
+        st.door = st.door === "open" ? "closed" : "open"; noise(-0.5, -0.05, 2);
+        say(st.door === "closed" ? (out ? "Дверь закрыта. Но ты снаружи!" : "Дверь закрыта. Теперь нажми на замок и поверни ключ.") : "Дверь открыта.");
         return;
-      case "lock": if (insideOnly("Замок изнутри. Снаружи у тебя нет ключа под рукой.")) return;
+      case "lock":
+        if (out) { say("Замок изнутри. Снаружи ключом не провернуть."); return; }
         if (st.door === "open") { say("Сначала закрой дверь — нажми на неё."); return; }
-        ensureAt("door", () => openGest(st.locked ? "unlock" : "lock")); return;
+        openGest(st.locked ? "unlock" : "lock"); return;
       case "shutter":
         if (out) {
           if (st.shutter < 0.75) openGest("pull");
-          else if (st.shutter < 1) say("Ролета встала на уровне колена. Снаружи её до конца не дожать — останешься на улице. Нажми «Пролезть под ролету».", 5);
+          else say("Ролета встала на уровне колена. Снаружи её не дожать — останешься на улице. Присядь и пролезь в дверь.", 5);
           return;
         }
         if (st.door !== "open") { say("Ролета снаружи, за дверью. Сначала открой дверь."); return; }
-        ensureAt("door", () => {
-          if (st.phase === "night" && st.knock && st.knock.on && !st.knock.done && st.shutter >= 1) beginInspect();
-          else if (st.shutter < 0.75) openGest("pullIn");
-          else if (st.shutter < 1) openGest("slam");
-          else say("Ролета в замке.");
-        });
+        if (st.phase === "night" && st.knock && st.knock.on && !st.knock.done && st.shutter >= 1) beginInspect();
+        else if (st.shutter < 0.75) openGest("pullIn");
+        else if (st.shutter < 1) openGest("slam");
+        else say("Ролета в замке.");
         return;
     }
   }
 
   // ---------- gestures ----------
   const GEST = {
-    pull: { icon: "↓", cls: "down", text: "Тяни ролету вниз: <b>проводи пальцем сверху вниз</b>, раз за разом. Она тугая и пружинит обратно.", key: "или жми ↓ / S много раз" },
-    pullIn: { icon: "↓", cls: "down", text: "Тянешь через дверь за нижнюю планку: <b>проводи пальцем вниз</b>.", key: "или жми ↓ / S" },
+    pull: { icon: "↓", cls: "down", text: "Тяни ролету вниз: <b>проводи пальцем сверху вниз</b>, раз за разом. Она тугая и пружинит обратно.", key: "или мышью вниз / жми S много раз" },
+    pullIn: { icon: "↓", cls: "down", text: "Тянешь через дверь за нижнюю планку: <b>проводи пальцем вниз</b>.", key: "или мышью вниз / жми S" },
     slam: { icon: "◎", cls: "hold", text: "Дожать до замка: <b>зажми палец и отпусти, когда белая черта в зелёной зоне</b>.", key: "или держи и отпусти Пробел" },
-    lock: { icon: "↻", cls: "turn", text: "Поверни ключ: <b>проведи пальцем вправо</b> — два оборота.", key: "или жми → / D дважды" },
-    unlock: { icon: "↺", cls: "turnl", text: "Поверни ключ обратно: <b>проведи пальцем влево</b> — два оборота.", key: "или жми ← / A дважды" },
+    lock: { icon: "↻", cls: "turn", text: "Поверни ключ: <b>проведи пальцем вправо</b> — два оборота.", key: "или жми D дважды" },
+    unlock: { icon: "↺", cls: "turnl", text: "Поверни ключ обратно: <b>проведи пальцем влево</b> — два оборота.", key: "или жми A дважды" },
     push: { icon: "⇥", cls: "hold", text: "Толкай стеллаж к витрине: <b>держи палец на экране</b>. Бутылки звенят — это шумно.", key: "или держи Пробел" },
   };
   function openGest(kind) {
-    if (kind === "pull") { st.yaw = Math.PI; st.pitch = 0.18; }
+    if (kind === "pull") { st.yaw = Math.PI; st.pitch = 0.15; }
+    if (kind === "pullIn" || kind === "slam") { st.yaw = 0; st.pitch = -0.45; }
     st.mode = kind; st.stroke = 0; st.turn = 0; st.charging = false; st.power = 0;
     const g = GEST[kind], el = $("aGest");
     el.hidden = false;
@@ -1103,22 +1152,22 @@ const Action = (() => {
       <button class="btn ghost" id="aGestX" type="button">Отойти</button>`;
     $("aGestX").onclick = e => { e.stopPropagation(); hideGest(); };
   }
-  function hideGest() { st.mode = "look"; st.charging = false; const el = $("aGest"); if (el) el.hidden = true; }
+  function hideGest() { if (!st) return; st.mode = "look"; st.charging = false; st.pushing = false; const el = $("aGest"); if (el) el.hidden = true; }
   function pullBy(amount) {
     if (st.shutter >= 0.75) return;
     st.shutter = Math.min(0.75, st.shutter + amount); st.lastPull = st.t;
     if (st.shutter >= 0.75) {
       hideGest(); noise(-0.3, -0.3, 7);
-      say(st.spot === "out" ? "Щёлк — ролета встала на защёлку на уровне колена. Дальше снаружи не дожать. Нажми «Пролезть под ролету»." : "Щёлк — на уровне колена. Теперь нажми на планку ещё раз и дожми рывком.", 5);
+      say(!pIn() ? "Щёлк — ролета встала на защёлку на уровне колена. Дальше снаружи не дожать. Присядь и пролезь в дверь." : "Щёлк — на уровне колена. Нажми на планку ещё раз и дожми рывком.", 5);
     }
   }
-  function strokeEnd() { if (st.stroke > 0.015) { noise(cam.position.x, -0.3, st.mode === "pull" ? 7 : 6); if (!st.script.rattle) { st.script.rattle = true; say("Ролета тугая и гремит на всё Москольцо. Тяни быстрее — и оглядывайся."); } } st.stroke = 0; }
+  function strokeEnd() { if (st.stroke > 0.015) { noise(st.x, -0.3, st.mode === "pull" ? 7 : 6); if (!st.script.rattle) { st.script.rattle = true; say("Ролета тугая и гремит на всё Москольцо. Тяни быстрее — и оглядывайся."); } } st.stroke = 0; }
   function slamRelease() {
     st.charging = false; const pw = (1 - Math.cos(st.power)) / 2; st.power = 0;
-    if (pw > 0.72 && pw < 0.93) { st.shutter = 1; noise(-0.5, -0.3, 5); hideGest(); say("Рывок — щёлк! Ролета села в замок. Теперь нажми на дверь, чтобы закрыть, и на замок.", 5); }
+    if (pw > 0.72 && pw < 0.93) { st.shutter = 1; noise(-0.5, -0.3, 5); hideGest(); say("Рывок — щёлк! Ролета села в замок. Теперь закрой дверь и поверни ключ.", 5); }
     else { st.shutter = 0.6; noise(-0.5, -0.3, 12); hideGest(); say(pw <= 0.72 ? "Слабо! Ролета пружинит и подскакивает вверх. Грохот на всё кольцо. Тяни заново." : "Перебор — сорвалась и подскочила. Грохот на всё кольцо. Тяни заново.", 4); }
   }
-  function turnKey(dir) {
+  function turnKey() {
     st.turn += 1; noise(-0.5, 0, 0.6);
     if (st.turn >= 2) {
       st.locked = st.mode === "lock"; hideGest();
@@ -1128,7 +1177,8 @@ const Action = (() => {
   }
 
   // ---------- input ----------
-  const ptr = { id: null, x: 0, y: 0, sx: 0, sy: 0, t0: 0, moved: 0 };
+  const look = { id: null, x: 0, y: 0, t0: 0, moved: 0 };
+  const joy = { id: null, cx: 0, cy: 0, dx: 0, dy: 0 };
   const keys = new Set();
   let bound = false;
   function bindInput() {
@@ -1136,62 +1186,80 @@ const Action = (() => {
     stage.onpointerdown = e => {
       if (!st || st.paused || e.target.closest("button") || e.target.closest(".intro")) return;
       if (st.scratch && st.scratch.on) st.scratch.noise += 0.25;
-      ptr.id = e.pointerId; ptr.x = ptr.sx = e.clientX; ptr.y = ptr.sy = e.clientY; ptr.t0 = performance.now(); ptr.moved = 0;
       try { stage.setPointerCapture(e.pointerId); } catch (_) {}
-      if (st.inspect) moveLight(e);
+      if (st.inspect) { moveLight(e); look.id = e.pointerId; return; }
+      const r = stage.getBoundingClientRect();
+      if (isTouch && st.mode === "look" && e.clientX - r.left < r.width * 0.45 && e.clientY - r.top > r.height * 0.35 && joy.id == null) {
+        joy.id = e.pointerId; const jb = $("aJoy").getBoundingClientRect(); joy.cx = jb.left + jb.width / 2; joy.cy = jb.top + jb.height / 2; joyMove(e); return;
+      }
+      look.id = e.pointerId; look.x = e.clientX; look.y = e.clientY; look.t0 = performance.now(); look.moved = 0;
       if (st.mode === "slam") { st.charging = true; st.power = 0; }
       if (st.mode === "push") st.pushing = true;
     };
     stage.onpointermove = e => {
       if (!st) return;
-      if (st.inspect && (e.pointerType === "mouse" || e.pointerId === ptr.id)) moveLight(e);
-      if (e.pointerId !== ptr.id) return;
-      const dx = e.clientX - ptr.x, dy = e.clientY - ptr.y; ptr.x = e.clientX; ptr.y = e.clientY; ptr.moved += Math.abs(dx) + Math.abs(dy);
+      if (st.inspect && (e.pointerType === "mouse" || e.pointerId === look.id)) { moveLight(e); return; }
+      if (e.pointerId === joy.id) { joyMove(e); return; }
+      if (e.pointerId !== look.id) return;
+      const dx = e.clientX - look.x, dy = e.clientY - look.y; look.x = e.clientX; look.y = e.clientY; look.moved += Math.abs(dx) + Math.abs(dy);
       if (st.scratch && st.scratch.on) st.scratch.noise += (Math.abs(dx) + Math.abs(dy)) * 0.004;
-      if (st.inspect) return;
       if (st.mode === "pull" || st.mode === "pullIn") { if (dy > 0) { const k = st.mode === "pull" ? 0.0011 : 0.0008; const add = Math.min(dy * k, 0.1 - st.stroke); if (add > 0) { st.stroke += add; pullBy(add); } } return; }
-      if (st.mode === "lock" || st.mode === "unlock") { const dir = st.mode === "lock" ? 1 : -1; st.stroke += dx * dir; if (st.stroke > 90) { st.stroke = 0; turnKey(); } return; }
-      if (st.mode === "slam" || st.mode === "push") return;
-      if (st.move) return;
+      if (st.mode === "lock" || st.mode === "unlock") { st.stroke += dx * (st.mode === "lock" ? 1 : -1); if (st.stroke > 90) { st.stroke = 0; turnKey(); } return; }
+      if (st.mode !== "look") return;
       st.yaw += dx * 0.006; st.pitch = Math.max(-1.25, Math.min(0.9, st.pitch + dy * 0.005));
     };
     stage.onpointerup = stage.onpointercancel = e => {
-      if (!st || e.pointerId !== ptr.id) return;
-      ptr.id = null;
+      if (!st) return;
+      if (e.pointerId === joy.id) { joy.id = null; joy.dx = joy.dy = 0; const k = $("aKnob"); if (k) k.style.transform = ""; return; }
+      if (e.pointerId !== look.id) return;
+      look.id = null;
       if (st.mode === "pull" || st.mode === "pullIn") strokeEnd();
       if (st.mode === "slam" && st.charging) slamRelease();
       st.pushing = false;
-      if (st.mode === "look" && !st.inspect && ptr.moved < 10 && performance.now() - ptr.t0 < 450) pickAt(e.clientX, e.clientY);
+      if (st.mode === "look" && !st.inspect && look.moved < 10 && performance.now() - look.t0 < 450) pickAt(e.clientX, e.clientY);
     };
     if (!bound) { bound = true; addEventListener("keydown", onKey); addEventListener("keyup", onKeyUp); }
+  }
+  function joyMove(e) {
+    let dx = (e.clientX - joy.cx) / 45, dy = (e.clientY - joy.cy) / 45; const m = Math.hypot(dx, dy); if (m > 1) { dx /= m; dy /= m; }
+    joy.dx = dx; joy.dy = dy; const k = $("aKnob"); if (k) k.style.transform = `translate(${dx * 32}px, ${dy * 32}px)`;
   }
   function onKey(e) {
     if (!st || st.paused) return;
     if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
-    if (st.scratch && st.scratch.on) st.scratch.noise += 0.3;
-    if (e.repeat) return;
+    if (st.scratch && st.scratch.on && !e.repeat) st.scratch.noise += 0.3;
     keys.add(e.code);
-    if ((st.mode === "pull" || st.mode === "pullIn") && ["ArrowDown", "KeyS", "KeyE"].includes(e.code)) { pullBy(st.mode === "pull" ? 0.055 : 0.04); st.stroke = 0.05; strokeEnd(); }
-    if (st.mode === "lock" && ["ArrowRight", "KeyD", "KeyE"].includes(e.code)) turnKey();
-    if (st.mode === "unlock" && ["ArrowLeft", "KeyA", "KeyE"].includes(e.code)) turnKey();
-    if (st.mode === "slam" && e.code === "Space") { st.charging = true; st.power = 0; }
-    if (st.mode === "push" && e.code === "Space") st.pushing = true;
-    if (e.code === "Escape" && st.mode !== "look") hideGest();
-    if (e.code === "KeyE" && st.mode === "look" && !st.inspect) { const r = $("aStage").getBoundingClientRect(); pickAt(r.left + r.width / 2, r.top + r.height / 2); }
+    if (e.repeat) return;
+    if ((st.mode === "pull" || st.mode === "pullIn") && ["ArrowDown", "KeyS", "KeyE"].includes(e.code)) { pullBy(st.mode === "pull" ? 0.055 : 0.04); st.stroke = 0.05; strokeEnd(); return; }
+    if (st.mode === "lock" && ["ArrowRight", "KeyD", "KeyE"].includes(e.code)) { turnKey(); return; }
+    if (st.mode === "unlock" && ["ArrowLeft", "KeyA", "KeyE"].includes(e.code)) { turnKey(); return; }
+    if (st.mode === "slam" && (e.code === "Space" || e.code === "KeyE")) { st.charging = true; st.power = 0; return; }
+    if (st.mode === "push" && (e.code === "Space" || e.code === "KeyE")) { st.pushing = true; return; }
+    if (e.code === "Escape" && st.mode !== "look") { hideGest(); return; }
+    if (e.code === "KeyC" || e.code === "ControlLeft") toggleCrouch();
+    if (e.code === "KeyE" && st.mode === "look" && st.aim) act(st.aim);
   }
   function onKeyUp(e) {
     if (!st) return; keys.delete(e.code);
-    if (st.mode === "slam" && e.code === "Space" && st.charging) slamRelease();
-    if (st.mode === "push" && e.code === "Space") st.pushing = false;
+    if (st.mode === "slam" && (e.code === "Space" || e.code === "KeyE") && st.charging) slamRelease();
+    if (st.mode === "push" && (e.code === "Space" || e.code === "KeyE")) st.pushing = false;
   }
+  function raycastId(nx, ny, far) {
+    const rc = new T.Raycaster(); rc.setFromCamera(new T.Vector2(nx, ny), cam); rc.far = far;
+    const hits = rc.intersectObjects(scene.children, true);
+    for (const h of hits) { const id = h.object.userData.act; if (id) return { id, d: h.distance }; if (h.distance > 0.05) return null; }
+    return null;
+  }
+  // standing outside, facing the shop front, within reach → the shutter is what you grab
+  const facingShutter = () => !pIn() && st.z > -2.4 && Math.abs(st.x) < 1.6 && Math.abs(wrap(st.yaw - Math.PI)) < 0.9;
   function pickAt(cx, cy) {
     const r = renderer.domElement.getBoundingClientRect();
-    const v = new T.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
-    const rc = new T.Raycaster(); rc.setFromCamera(v, cam); rc.far = 12;
-    const hits = rc.intersectObjects(scene.children, true);
-    for (const h of hits) { const id = h.object.userData.act; if (id) { act(id); return; } if (h.distance > 0.05) break; }
+    let hit = raycastId(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1, 8);
+    if ((!hit || hit.id !== "door") && facingShutter()) hit = { id: "shutter", d: 1 };
+    if (!hit) return;
+    if (hit.d > 2.0) { say(`${NAMES[hit.id]}: подойди ближе.`, 2); return; }
+    act(hit.id);
   }
-
   // ---------- inspection through the gap (2D overlay) ----------
   const ZONES = [
     { id: "hl", x: 190, y: 150 }, { id: "hr", x: 410, y: 150 }, { id: "al", x: 215, y: 250 }, { id: "ar", x: 385, y: 250 }, { id: "nk", x: 300, y: 300 },
@@ -1260,59 +1328,76 @@ const Action = (() => {
     door: "Незапертую дверь продавят. Закрыть мало — запри на ключ.",
     inspect: "Проверка должна быть быстрой: кисти, предплечья, шея — 10 секунд. Чем дольше ролета поднята, тем больше шансов, что подойдут.",
     guest: "В квадрате 2×2 некуда деться. Впустить человека с укусом в комнату без второго выхода — приговор. Проверяй всё и не верь словам.",
-    touch: "Любое касание — укус. Держи дистанцию.",
+    touch: "Любое касание — укус. Держи дистанцию. Под столом тебя видно через витрину, пока ролета поднята.",
   };
   function die(cause, out) {
     if (st.dead) return;
-    st.dead = true;
+    st.dead = true; hideGest();
     tally("bad", { outside: "Попасться на улице у ролеты", gap: "Задержаться у щели под ролетой", glass: "Витрина не выдержала", door: "Дверь продавили", inspect: "Слишком долгая проверка", guest: "Обратившийся внутри", touch: "Подпустить слишком близко" }[cause]);
     $("aVig").style.background = "rgba(150,10,10,.55)";
     setTimeout(() => { const f = fin; stop(); f({ tone: "bad", out, tips: [{ v: "bad", tip: TIPS[cause] }], r: { end: cause === "guest" ? "box" : "bitten" } }); }, 900);
   }
   function morning() {
-    const f = fin, s = st;
-    if (s.fridge) { G.water += 3; G.f.energy = 4; }
+    const f = fin, s = st, liters = s.shelvesTaken * 2.5;
+    G.water += liters; if (s.cans) G.f.energy = 4;
     if (s.powerbank) G.charge = 100;
     G.f.shutter = true; G.f.door = true; G.f.dark = !s.lights;
     if (s.guest && !s.guest.bitten) { G.withGuest = true; G.guestName = "Даша"; G.guestBitten = false; }
     const tips = [
       { v: "good", t: "Ролета", tip: "Ролета — главная защита витрины. Опускать её тяжело и громко, поэтому делать это надо сразу, пока улица пуста." },
       { v: s.lights ? "bad" : "good", t: "Свет", tip: s.lights ? "Свет горел всю ночь. Полоски света под ролетой видно с кольца — к утру у витрины собрались." : "Темнота сделала магазин пустым для тех, кто снаружи." },
-      { v: s.fridge ? "good" : "bad", t: "Вода", tip: s.fridge ? "Энергетики не заменяют воду: кофеин и сахар усиливают обезвоживание. Пей воду, а энергетик — только чтобы не уснуть." : "Холодильник остался полным. Без крана и подсобки эти 3 литра были единственной водой." },
+      { v: liters ? "good" : "bad", t: "Вода", tip: liters ? `Ты забрал ${liters} л воды. Без крана и подсобки это вся твоя вода. ${s.cans ? "Энергетики не заменяют воду: кофеин и сахар усиливают обезвоживание." : ""}` : "Холодильник остался полным. Без крана и подсобки это была единственная вода." },
     ];
     tally(s.lights ? "bad" : "good", s.lights ? "Свет и вывеска горят" : "Свет и вывеска выключены");
-    tally(s.fridge ? "good" : "bad", s.fridge ? "Забрать воду из холодильника" : "Не взять воду");
+    tally(liters >= 10 ? "good" : liters ? "mid" : "bad", liters ? `Забрать воду: ${liters} л` : "Не взять воду");
     stop();
-    f({ tone: s.lights || !s.fridge ? "mid" : "good", out: `06:10. Ночь кончилась. Ты всё ещё в квадрате 2×2${s.guest && !s.guest.bitten ? ", Даша спит, сидя на полу" : ""}. ${s.fridge ? "Есть 3 литра воды и энергетики, " : "Воды нет, "}еды нет совсем.`, tips, r: { next: NEXT } });
+    f({ tone: s.lights || !liters ? "mid" : "good", out: `06:10. Ночь кончилась. Ты всё ещё в квадрате 2×2${s.guest && !s.guest.bitten ? ", Даша спит, сидя на полу" : ""}. ${liters ? `Воды ${liters} л, ` : "Воды нет, "}еды нет совсем.`, tips, r: { next: NEXT } });
   }
 
   // ---------- simulation ----------
   function spawnZ(x, z, extra = {}) { const zb = { x, z, state: "wander", tx: x < 0 ? 20 : -20, tz: z, ph: rnd(0, 6), perceive: 0, inside: false, g: person(0x4a5a3a, true), ...extra }; zb.g.position.set(x, 0, z); st.zombies.push(zb); return zb; }
   function update(dt) {
     st.t += dt;
-    const P = cam.position, inside = pIn();
-    // camera travel
-    if (st.move) {
-      const mv = st.move; mv.t += dt; const k = Math.min(1, mv.t / mv.dur), segs = mv.pts.length - 1, f = k * segs, i = Math.min(segs - 1, Math.floor(f)), u = f - i;
-      const a = mv.pts[i], b = mv.pts[i + 1], e = SPOT[mv.end];
-      cam.position.set(lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u));
-      st.yaw = mv.yaw0 + wrap(e.yaw - mv.yaw0) * Math.min(1, k * 1.4); st.pitch = lerp(mv.pitch0, mv.crawl && k < 0.8 ? 0.1 : e.pitch, Math.min(1, k * 1.4));
-      if (k >= 1) { st.move = null; st.spot = mv.end; const af = st.after; st.after = null; if (af) af(); }
+    const inside = pIn();
+    // --- player movement
+    let ix = 0, iz = 0;
+    if (st.mode === "look" && !st.inspect) {
+      const f = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - joy.dy;
+      const s = (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0) + joy.dx;
+      if (keys.has("ArrowLeft")) st.yaw += dt * 2; if (keys.has("ArrowRight")) st.yaw -= dt * 2;
+      const fx = -Math.sin(st.yaw), fz = -Math.cos(st.yaw), rx = Math.cos(st.yaw), rz = -Math.sin(st.yaw);
+      ix = fx * f + rx * s; iz = fz * f + rz * s;
     }
-    // scripts
+    const m = Math.hypot(ix, iz); if (m > 1) { ix /= m; iz /= m; }
+    const quiet = st.sneak || keys.has("ShiftLeft") || keys.has("ShiftRight");
+    const sp = st.crouch ? 0.5 : quiet ? 0.6 : 1.5;
+    st.moving = m > 0.1;
+    st.x += ix * sp * dt; st.z += iz * sp * dt;
+    const hit = collide();
+    st.bumpCd -= dt;
+    if (hit && st.moving && !quiet && !st.crouch && st.bumpCd <= 0) { st.bumpCd = 1.5; bump(); }
+    st.stepT -= dt;
+    if (st.moving && st.stepT <= 0) { st.stepT = 0.5; if (!quiet && !st.crouch) noise(st.x, st.z, 3.5); }
+    if (st.moving && st.scratch && st.scratch.on) st.scratch.noise += dt * (quiet || st.crouch ? 0.15 : 0.5);
+    const wasHidden = st.hidden;
+    st.hidden = st.crouch && underTable();
+    if (st.hidden && !wasHidden) say(st.shutter >= 0.95 ? "Под столом. Темно и тесно." : "Под столом… но через витрину тебя всё равно видно, пока ролета поднята.", 3.5);
+    st.eye += ((st.crouch ? EYE_CROUCH : EYE) - st.eye) * Math.min(1, dt * 8);
+    cam.position.set(st.x, st.eye, st.z);
+    // --- scripts
     if (st.phase === "evening") {
       if (!st.script.notif && st.t > 3) { st.script.notif = true; say("Телефон: «Симферополь. Нападения на людей на Москольце и Киевской. Не выходите на улицу». С кольца доносятся крики.", 6); }
       if (!st.script.chase && st.t > 8) { st.script.chase = true; const c = person(0x6fa0d0, false); st.civs.push({ g: c, x: -18, z: -2.7, v: 3.4 }); spawnZ(-21, -2.9, { state: "pursue", speed: 2.6 }); }
       st.spawnT -= dt;
-      if (st.t > 16 && st.spawnT <= 0 && st.zombies.length < 12) { st.spawnT = Math.max(3, 8 - st.t / 25); st.warns.push({ x: Math.random() < 0.5 ? -17 : 17, z: rnd(-12, -2.5), t: 1.5 }); }
+      if (st.t > 18 && st.spawnT <= 0 && st.zombies.length < 12) { st.spawnT = Math.max(3.5, 9 - st.t / 25); st.warns.push({ x: Math.random() < 0.5 ? -17 : 17, z: rnd(-12, -2.5), t: 1.5 }); }
       for (let i = st.warns.length - 1; i >= 0; i--) { const w = st.warns[i]; w.t -= dt; if (w.t <= 0) { spawnZ(w.x, w.z); st.warns.splice(i, 1); } }
       if (st.shutter >= 1 && st.locked && inside) {
-        if (st.secureT == null) { st.secureT = st.t; say("Ролета в замке, дверь заперта. Удары с улицы глохнут.", 4); tally("good", "Ролета опущена изнутри, до замка"); }
-        if (st.t - st.secureT > 3.5 && st.mode === "look" && !st.move) toNight();
+        if (st.secureT == null) { st.secureT = st.t; say("Ролета в замке, дверь заперта. Удары с улицы глохнут. Можно собрать воду и выключить свет.", 5); tally("good", "Ролета опущена изнутри, до замка"); }
+        if (st.t - st.secureT > 12 && st.mode === "look") toNight();
       }
     } else {
       if (!st.knock && st.t - st.nightT > 4) { st.knock = { on: true, t: 0, done: false }; say("Стук по ролете. Девичий голос: «Откройте! Я Даша, с остановки! Пожалуйста!» Чтобы проверить: замок → дверь → нажми на ролету.", 8); }
-      if (st.knock && st.knock.on && !st.inspect) { st.knock.t += dt; if (st.knock.t > 26) { st.knock.on = false; st.knock.done = true; tally("mid", "Не открывать на стук"); say("Стук стихает. Шаги уходят к кольцу. Потом короткий крик.", 4); st.scratchAt = st.t + 5; } }
+      if (st.knock && st.knock.on && !st.inspect) { st.knock.t += dt; if (st.knock.t > 30) { st.knock.on = false; st.knock.done = true; tally("mid", "Не открывать на стук"); say("Стук стихает. Шаги уходят к кольцу. Потом короткий крик.", 4); st.scratchAt = st.t + 5; } }
       if (st.inspect) {
         const ins = st.inspect; ins.t += dt;
         for (const z of ZONES) if (Math.hypot(light.x - z.x, light.y - z.y) < 45) { ins.dwell[z.id] = (ins.dwell[z.id] || 0) + dt; if (ins.dwell[z.id] > 0.35) ins.seen[z.id] = true; }
@@ -1322,7 +1407,7 @@ const Action = (() => {
         st.guest.turned = true; say("Даша хрипит и медленно поднимается с пола. В квадрате 2×2 некуда деться.", 5);
         scene.remove(st.guest.g); spawnZ(-0.3, 0.9, { inside: true, state: "chase", speed: 0.9, wasGuest: true }); st.guest = null;
       }
-      if (st.scratchAt && !st.scratch && st.t > st.scratchAt) { st.scratch = { on: true, t: 0, noise: 0, done: false }; spawnZ(-0.3, -0.6, { state: "scratch" }); say("Скрежет по ролете. Медленно, без остановки. <b>Не трогай экран и не двигайся</b>, пока не уйдёт.", 7); }
+      if (st.scratchAt && !st.scratch && st.t > st.scratchAt) { st.scratch = { on: true, t: 0, noise: 0, done: false }; spawnZ(-0.3, -0.6, { state: "scratch" }); say("Скрежет по ролете. Медленно, без остановки. <b>Не ходи и не трогай экран</b>, пока не уйдёт.", 7); }
       if (st.scratch && st.scratch.on) {
         const sc = st.scratch; sc.t += dt; sc.noise = Math.max(0, sc.noise - dt * 0.12);
         if (sc.noise > 1 && !sc.failed) { sc.failed = true; G.stress += 30; say("Скрежет обрывается — и в ролету бьют всем телом. Потом второй. Третий.", 4); for (let i = 0; i < 2; i++) spawnZ(rnd(-0.8, 0.8), -0.7 - i * 0.4, { state: "scratch" }); }
@@ -1330,21 +1415,26 @@ const Action = (() => {
       }
       if (st.morningAt && st.t > st.morningAt && !st.zombies.some(z => z.inside)) { morning(); return; }
     }
-    // gestures over time
+    // --- gestures over time
     if (st.mode === "slam" && st.charging) st.power += dt * 2.0;
     if (st.mode === "push" && st.pushing) {
       const before = st.push; st.push = Math.min(1, st.push + dt / 3.2);
       if (Math.floor(before * 5) !== Math.floor(st.push * 5)) noise(0.6, 0.6, 8);
-      if (st.push >= 1) { st.barricaded = true; hideGest(); say("Стеллаж с одноразками стоит вплотную к витрине. Пол усыпан упавшими жижами."); tally("good", "Задвинуть стеллаж к витрине"); }
+      if (st.push >= 1) { st.barricaded = true; hideGest(); st.x = Math.min(st.x, 0.3); st.z = Math.max(st.z, 0.8); say("Стеллаж с одноразками стоит вплотную к витрине. Пол усыпан упавшими жижами."); tally("good", "Задвинуть стеллаж к витрине"); }
+    }
+    if (st.mode !== "look" && st.mode !== "lock" && st.mode !== "unlock") {
+      // gestures need you to stay where you are
+      const needOut = st.mode === "pull", nearDoorIn = inside && st.x < 0.1 && st.z < 1.0;
+      if ((needOut && inside) || ((st.mode === "pullIn" || st.mode === "slam") && !nearDoorIn)) hideGest();
     }
     if (st.shutter > 0 && st.shutter < 0.75 && st.t - st.lastPull > 0.8) st.shutter = Math.max(0, st.shutter - 0.05 * dt);
     st.loud = Math.max(0, st.loud - dt * 0.5);
-    // civilians
+    // --- civilians
     for (const c of st.civs) { c.x += c.v * dt; c.g.position.set(c.x, 0, c.z); c.g.rotation.y = Math.PI / 2; const ph = st.t * 9; c.g.userData.legL.rotation.x = Math.sin(ph) * 0.6; c.g.userData.legR.rotation.x = -Math.sin(ph) * 0.6; }
     for (const c of st.civs) if (c.x > 22) scene.remove(c.g);
     st.civs = st.civs.filter(c => c.x <= 22);
-    // zombies
-    const px = P.x, pz = P.z;
+    // --- zombies
+    const px = st.x, pz = st.z;
     let danger = 0, warnTxt = null;
     for (const z of st.zombies) {
       z.perceive -= dt;
@@ -1353,28 +1443,30 @@ const Action = (() => {
       else if (z.perceive <= 0) {
         z.perceive = 0.25;
         const d = Math.hypot(z.x - px, z.z - pz);
-        let sees = z.inside || (!inside && d < 9) || (inside && st.shutter < 0.95 && d < (st.lights ? 14 : 3.2));
-        if (sees) z.state = "chase";
+        let range = 0;
+        if (z.inside) range = 99;
+        else if (!inside) range = 9;
+        else if (st.shutter < 0.95) range = st.hidden ? (st.lights ? 6 : 1.6) : (st.lights ? 14 : 3.2);
+        if (d < range) z.state = "chase";
         else if (z.state === "chase") { z.state = "seek"; z.tx = px; z.tz = Math.min(-0.5, pz); }
       }
       if (z.state === "chase") { z.tx = px; z.tz = pz; }
       if (z.state === "seek" && Math.hypot(z.x - z.tx, z.z - z.tz) < 0.3) { z.state = "wander"; z.tx = z.x < 0 ? 22 : -22; z.tz = z.z; }
-      const sp = z.speed || (z.state === "chase" ? 1.35 : z.state === "seek" ? 0.85 : z.state === "scratch" ? 0.2 : 0.45);
+      const zs = z.speed || (z.state === "chase" ? 1.3 : z.state === "seek" ? 0.85 : z.state === "scratch" ? 0.2 : 0.45);
       const dx = z.tx - z.x, dz = z.tz - z.z, dl = Math.hypot(dx, dz);
-      if (dl > 0.05) { let nx = z.x + dx / dl * sp * dt, nz = z.z + dz / dl * sp * dt;
+      if (dl > 0.05) { let nx = z.x + dx / dl * zs * dt, nz = z.z + dz / dl * zs * dt;
         if (!z.inside) {
           if (nz > -0.42) {
             const canDoor = st.shutter < 0.7 && st.door === "open" && nx > -0.85 && nx < -0.15;
             const canWin = st.shutter < 0.7 && st.glassBroken && !st.barricaded && nx > 0.1 && nx < 0.9;
             if (!(canDoor || canWin)) nz = -0.42; else if (nz > 0.15) z.inside = true;
           }
-        } else { nx = Math.max(-0.8, Math.min(0.8, nx)); nz = Math.max(0.15, Math.min(1.4, nz)); }
-        z.x = nx; z.z = nz; z.g.rotation.y = Math.atan2(dx, dz); z.ph += dt * sp * 4;
+        } else { nx = Math.max(-0.65, Math.min(0.6, nx)); nz = Math.max(0.15, Math.min(1.4, nz)); }
+        z.x = nx; z.z = nz; z.g.rotation.y = Math.atan2(dx, dz); z.ph += dt * zs * 4;
       }
       z.g.position.set(z.x, Math.abs(Math.sin(z.ph)) * 0.04, z.z);
       const u = z.g.userData; u.legL.rotation.x = Math.sin(z.ph) * 0.4; u.legR.rotation.x = -Math.sin(z.ph) * 0.4; u.armL.rotation.x = -1.35 + Math.sin(z.ph * 0.7) * 0.15; u.armR.rotation.x = -1.2 - Math.sin(z.ph * 0.7) * 0.15;
       if (z.x < -24 || z.x > 24) z.gone = true;
-      // window, door
       if (!z.inside && z.state === "chase" && inside && !st.glassBroken && st.shutter < 0.95 && z.z <= -0.41 && z.x > 0 && z.x < 1) {
         st.glass -= 7 * dt; if (Math.random() < dt * 2) noise(z.x, z.z, 5);
         O.cracks.material.opacity = Math.min(1, (100 - st.glass) / 70);
@@ -1387,15 +1479,15 @@ const Action = (() => {
         const fwd = Math.atan2(-Math.sin(st.yaw), -Math.cos(st.yaw)), ang = wrap(Math.atan2(z.x - px, z.z - pz) - fwd);
         if (Math.abs(ang) > 0.65 && (!warnTxt || d < warnTxt.d)) warnTxt = { d, side: Math.abs(ang) > 2.2 ? "back" : ang < 0 ? "right" : "left" };
       }
-      if (d < 0.5 && cam.position.y > 0.3) { die(z.inside ? (z.wasGuest ? "guest" : st.glassBroken ? "glass" : st.pushedOpen ? "door" : "touch") : !inside ? "outside" : "touch", z.inside ? "Оно тянется к тебе через весь магазин — это два шага. Спрятаться некуда." : !inside ? "Ты слишком долго возишься с ролетой. Чужая рука ложится на плечо." : "Холодные пальцы смыкаются на твоём запястье."); return; }
-      if (!z.inside && st.shutter >= 0.7 && st.shutter < 1 && st.door === "open" && st.spot === "door" && Math.hypot(z.x + 0.5, z.z + 0.42) < 0.6) { die("gap", "Под ролетой щель. Из неё высовывается рука и хватает тебя за щиколотку."); return; }
+      if (d < 0.45) { die(z.inside ? (z.wasGuest ? "guest" : st.glassBroken ? "glass" : st.pushedOpen ? "door" : "touch") : !inside ? "outside" : "touch", z.inside ? "Оно тянется к тебе через весь магазин — это два шага. Спрятаться некуда." : !inside ? "Ты слишком долго возишься у ролеты. Чужая рука ложится на плечо." : "Холодные пальцы смыкаются на твоём запястье."); return; }
+      if (!z.inside && st.shutter >= 0.7 && st.shutter < 1 && st.door === "open" && inside && px < 0.05 && pz < 0.45 && Math.hypot(z.x + 0.5, z.z + 0.42) < 0.6) { die("gap", "Под ролетой щель. Из неё высовывается рука и хватает тебя за щиколотку."); return; }
     }
     for (const z of st.zombies) if (z.gone) scene.remove(z.g);
     st.zombies = st.zombies.filter(z => !z.gone);
     st.danger = danger; st.warnTxt = warnTxt;
   }
   function toNight() {
-    st.phase = "night"; st.nightT = st.t;
+    st.phase = "night"; st.nightT = st.t; hideGest();
     for (const z of st.zombies) scene.remove(z.g); st.zombies = []; st.warns = [];
     for (const l of lamps) l.intensity = 0;
     hemi.intensity = 0.12; scene.background.set(0x07090f); scene.fog.color.set(0x07090f); fireL.intensity = 2.2;
@@ -1407,87 +1499,89 @@ const Action = (() => {
   function render(now) {
     const host = $("aGL"); if (!host) return;
     const w = host.clientWidth, h = host.clientHeight;
-    const cv = renderer.domElement;
-    if (cv.width !== Math.round(w * renderer.getPixelRatio()) || cv.height !== Math.round(h * renderer.getPixelRatio())) { renderer.setSize(w, h, false); cam.aspect = w / h; cam.fov = Math.max(70, Math.min(96, 2 * Math.atan(Math.tan(36 * Math.PI / 180) / cam.aspect) * 180 / Math.PI)); cam.updateProjectionMatrix(); }
+    if (renderer.domElement.width !== Math.round(w * renderer.getPixelRatio()) || renderer.domElement.height !== Math.round(h * renderer.getPixelRatio())) { renderer.setSize(w, h, false); cam.aspect = w / h; cam.fov = Math.max(70, Math.min(96, 2 * Math.atan(Math.tan(36 * Math.PI / 180) / cam.aspect) * 180 / Math.PI)); cam.updateProjectionMatrix(); }
+    cam.position.set(st.x, st.eye, st.z);
     cam.rotation.set(st.pitch, st.yaw, 0);
-    // dynamic state → meshes
     const sh = Math.max(0.001, st.shutter * SH_TOP);
     O.shutter.scale.y = sh; O.shutter.position.y = SH_TOP - sh / 2; O.shTex.repeat.set(1, sh * 4);
     O.shBar.position.y = SH_TOP - st.shutter * SH_TOP + 0.03;
     const target = st.door === "open" ? -1.35 : 0; st.doorAng += (target - st.doorAng) * 0.2; O.door.rotation.y = st.doorAng;
     O.key.rotation.z += ((st.locked ? Math.PI : 0) + (st.mode === "lock" ? st.turn * Math.PI / 2 : st.mode === "unlock" ? -st.turn * Math.PI / 2 : 0) - O.key.rotation.z) * 0.2;
-    O.fdoor.rotation.y += ((st.fridgeOpen ? -1.6 : 0) - O.fdoor.rotation.y) * 0.15;
+    O.fdoor.rotation.y += ((st.fridgeOpen ? -1.7 : 0) - O.fdoor.rotation.y) * 0.15;
     const bp = st.barricaded ? 1 : st.push;
-    O.shelfR.position.set(lerp(0.84, 0.5, bp), 0, lerp(0.85, 0.28, bp)); O.shelfR.rotation.y = lerp(0, -Math.PI / 2, bp);
+    O.shelfR.position.set(lerp(0.84, 0.5, bp), 0, lerp(0.78, 0.26, bp)); O.shelfR.rotation.y = lerp(0, -Math.PI / 2, bp);
     inLight.intensity = st.lights ? 1.4 : 0; O.ceil.material.emissiveIntensity = st.lights ? 1 : 0.02;
     for (const n of O.neonIn) n.material.emissiveIntensity = st.lights ? 1.5 : 0;
     O.neon.material.color.set(st.lights ? (Math.sin(now / 90) > -0.9 ? 0xffffff : 0x777777) : 0x222222);
     flash.intensity = (st.phase === "night" || !st.lights) ? 1.3 : 0;
     if (st.phase === "night") fireL.intensity = 1.8 + Math.sin(now / 70) * 0.5;
-    // highlight current target
     const goal = currentGoal();
-    for (const [k, m] of Object.entries({ shutter: O.shBar, door: O.door, lock: O.lock, switch: O.sw, fridge: O.fdoor, shelf: O.shelfR, pb: O.pb })) {
-      const on = goal && goal.obj === k && st.mode === "look" && !st.move;
-      m.traverse(o => { if (o.material && o.material.emissive) { if (o.userData.baseE === undefined) o.userData.baseE = o.material.emissive.getHex(); o.material.emissive.setHex(on ? 0xf1b03f : o.userData.baseE); o.material.emissiveIntensity = on ? 0.35 + 0.35 * Math.sin(now / 160) : (o.userData.neon ? o.material.emissiveIntensity : o.material.emissiveIntensity); } });
+    const objMap = { shutter: O.shBar, door: O.door, lock: O.lock, switch: O.sw, fridge: O.fdoor, shelf: O.shelfR, pb: O.pb };
+    for (const [k, m] of Object.entries(objMap)) {
+      const on = goal && goal.obj === k && st.mode === "look";
+      m.traverse(o => { if (o.material && o.material.emissive && !o.userData.neon) { if (o.userData.baseE === undefined) { o.userData.baseE = o.material.emissive.getHex(); o.userData.baseI = o.material.emissiveIntensity; } o.material.emissive.setHex(on ? 0xf1b03f : o.userData.baseE); o.material.emissiveIntensity = on ? 0.35 + 0.35 * Math.sin(now / 160) : o.userData.baseI; } });
     }
     renderer.render(scene, cam);
-    // label over target
+    // aim (what is under the crosshair)
+    const hit = st.mode === "look" && !st.inspect ? raycastId(0, 0, 2.0) : null;
+    st.aim = hit && hit.id === "door" ? "door" : facingShutter() ? "shutter" : hit ? hit.id : null;
+    const aimEl = $("aAim"), ab = $("bAct"), vb = st.aim && verb(st.aim);
+    if (st.aim && vb) { aimEl.hidden = false; const t = `${isTouch ? "" : "E · "}${NAMES[st.aim]}: ${vb}`; if (aimEl.textContent !== t) aimEl.textContent = t; ab.disabled = false; ab.textContent = vb.length > 16 ? NAMES[st.aim] : vb[0].toUpperCase() + vb.slice(1); }
+    else { aimEl.hidden = true; ab.disabled = true; ab.textContent = "Действие"; }
+    // goal label
     const lab = $("aLabel");
-    if (goal && goal.obj && st.mode === "look" && !st.move && !st.inspect) {
-      const objMap = { shutter: O.shBar, door: O.door, lock: O.lock, switch: O.sw, fridge: O.fdoor, shelf: O.shelfR, pb: O.pb };
-      const wp = new T.Vector3(); objMap[goal.obj].getWorldPosition(wp);
-      if (goal.obj === "door") wp.set(-0.5, 1.2, -0.05); if (goal.obj === "shutter") wp.set(Math.max(-0.8, Math.min(0.8, cam.position.x)), Math.max(0.3, wp.y), -0.24); if (goal.obj === "shelf") wp.y = 1.2; if (goal.obj === "fridge") wp.set(0.74, 0.7, 1.53);
+    if (goal && st.mode === "look" && !st.inspect) {
+      const wp = new T.Vector3();
+      if (goal.at) wp.set(...goal.at); else { objMap[goal.obj].getWorldPosition(wp); if (goal.obj === "door") wp.set(-0.5, 1.2, -0.05); if (goal.obj === "shutter") wp.set(-0.5, Math.max(0.3, wp.y), -0.24); if (goal.obj === "shelf") wp.y = 1.2; if (goal.obj === "fridge") wp.set(0.71, 1.2, 1.42); }
       const v = wp.clone().project(cam);
-      const behind = v.z > 1 || Math.abs(v.x) > 1 || Math.abs(v.y) > 1;
+      const off = v.z > 1 || Math.abs(v.x) > 0.95 || Math.abs(v.y) > 0.95;
       lab.hidden = false;
-      if (behind) { const fwd = Math.atan2(-Math.sin(st.yaw), -Math.cos(st.yaw)); const ang = wrap(Math.atan2(wp.x - cam.position.x, wp.z - cam.position.z) - fwd); lab.className = "tlabel edge " + (ang < 0 ? "r" : "l"); lab.style.left = ""; lab.style.top = ""; lab.innerHTML = (ang < 0 ? "" : "← ") + "повернись: " + goal.label + (ang < 0 ? " →" : ""); }
-      else { lab.className = "tlabel"; lab.style.left = ((v.x + 1) / 2 * w) + "px"; lab.style.top = ((1 - v.y) / 2 * h) + "px"; lab.innerHTML = goal.label; }
+      if (off) { const fwd = Math.atan2(-Math.sin(st.yaw), -Math.cos(st.yaw)); const ang = wrap(Math.atan2(wp.x - st.x, wp.z - st.z) - fwd); lab.className = "tlabel edge " + (ang < 0 ? "r" : "l"); lab.style.left = ""; lab.style.top = ""; lab.innerHTML = (ang < 0 ? "" : "← ") + "повернись: " + goal.short + (ang < 0 ? " →" : ""); }
+      else { lab.className = "tlabel"; lab.style.left = ((v.x + 1) / 2 * w) + "px"; lab.style.top = ((1 - v.y) / 2 * h) + "px"; lab.innerHTML = goal.short; }
     } else lab.hidden = true;
-    // edge warnings & vignette
     const ew = $("aEdge");
     if (st.warnTxt && !st.inspect) { ew.hidden = false; ew.className = "edgew " + st.warnTxt.side; ew.textContent = st.warnTxt.side === "back" ? "↓ шаги сзади!" : st.warnTxt.side === "left" ? "← шаги слева" : "шаги справа →"; } else ew.hidden = true;
     $("aVig").style.boxShadow = st.danger > 0 ? `inset 0 0 ${40 + st.danger * 80}px rgba(200,20,20,${0.3 + st.danger * 0.5})` : "none";
-    // gesture meters
     const nd = $("aNeedle"); if (nd) nd.style.left = ((1 - Math.cos(st.power)) / 2 * 100) + "%";
     const fl = $("aFill"); if (fl) fl.style.width = (st.mode === "push" ? st.push * 100 : st.turn / 2 * 100) + "%";
     if (st.inspect) drawInspect();
   }
   function currentGoal() {
+    const out = !pIn();
     if (st.phase === "evening") {
-      if (st.shutter < 0.75) return st.spot === "out" ? { obj: "shutter", label: "Ролета: нажми и тяни вниз ↓" } : st.door !== "open" ? { obj: "door", label: "Дверь: открой" } : { nav: "out", label: "Выйди на улицу к ролете" };
-      if (st.shutter < 1) return st.spot === "out" ? { nav: "in", label: "Пролезь под ролету внутрь" } : { obj: "shutter", label: "Нижняя планка ролеты: дожми" };
-      if (st.door === "open") return { obj: "door", label: "Дверь: закрой" };
-      if (!st.locked) return { obj: "lock", label: "Замок: поверни ключ" };
+      if (st.shutter < 0.75) {
+        if (out) return { obj: "shutter", short: "Ролета: подойди и нажми", text: "Подойди к ролете и нажми на неё — потом тяни вниз." };
+        if (st.door !== "open") return { obj: "door", short: "Дверь: открой", text: "Открой дверь, чтобы выйти к ролете." };
+        return { at: [-0.5, 1.1, -0.1], short: "Выход: иди сюда", text: "Выйди на улицу через дверь — ролета снаружи." };
+      }
+      if (st.shutter < 1) {
+        if (out) return { at: [-0.5, 0.45, -0.24], short: st.crouch ? "Пролезай здесь" : "Присядь и пролезь здесь", text: st.crouch ? "Пролезай под ролету в дверь." : "Присядь (кнопка «Присесть» / C) и пролезь под ролету в дверь." };
+        return { obj: "shutter", short: "Планка: дожми", text: "Подойди к двери и нажми на нижнюю планку ролеты — дожми рывком." };
+      }
+      if (st.door === "open") return { obj: "door", short: "Дверь: закрой", text: "Закрой дверь — нажми на неё." };
+      if (!st.locked) return { obj: "lock", short: "Замок: ключ", text: "Нажми на замок и поверни ключ." };
+      if (st.lights) return { obj: "switch", short: "Свет: выключи", text: "Выключи свет — выключатель слева у двери." };
+      if (st.shelvesTaken < 6) return { obj: "fridge", short: "Вода: забирай", text: "Забери воду из холодильника — по полке за нажатие." };
       return null;
     }
-    if (st.knock && st.knock.on && !st.inspect) { if (st.locked) return { obj: "lock", label: "Замок: отпереть, чтобы проверить" }; if (st.door !== "open") return { obj: "door", label: "Дверь: открой" }; return { obj: "shutter", label: "Ролета: приподнять и проверить" }; }
+    if (st.knock && st.knock.on && !st.inspect) { if (st.locked) return { obj: "lock", short: "Замок: отпереть", text: "Хочешь проверить — отопри замок." }; if (st.door !== "open") return { obj: "door", short: "Дверь: открой", text: "Открой дверь." }; return { obj: "shutter", short: "Ролета: приподнять", text: "Нажми на ролету — приподнять на ладонь и проверить." }; }
     return null;
   }
   function hud() {
     const L = Math.min(1, st.loud), li = $("aLoud");
     li.style.width = (L * 100).toFixed(0) + "%"; li.style.background = L > 0.66 ? "var(--alarm)" : L > 0.25 ? "var(--warn)" : "var(--ok)";
-    const lt = st.scratch && st.scratch.on ? (st.scratch.noise > 0.5 ? "оно прислушивается" : "замри") : L > 0.66 ? "грохот" : L > 0.25 ? "слышно" : st.sneak ? "крадёшься" : "тихо";
+    const quiet = st.sneak || keys.has("ShiftLeft") || keys.has("ShiftRight");
+    const lt = st.scratch && st.scratch.on ? (st.scratch.noise > 0.5 ? "оно прислушивается" : "замри") : L > 0.66 ? "грохот" : L > 0.25 ? "слышно" : st.moving && (quiet || st.crouch) ? "крадёшься" : "тихо";
     if ($("aLoudT").textContent !== lt) $("aLoudT").textContent = lt;
     const goal = currentGoal();
-    const step = st.inspect ? "Веди фонарик по кистям, предплечьям и шее. Потом реши." : st.scratch && st.scratch.on ? "Не трогай экран. Любое движение — шум." : goal ? "Сейчас: " + goal.label : st.phase === "evening" ? "Закрыто. Можно забрать воду, выключить свет, задвинуть стеллаж." : "Жди. Слушай.";
+    const step = st.inspect ? "Веди фонарик по кистям, предплечьям и шее. Потом реши." : st.scratch && st.scratch.on ? "Не ходи и не трогай экран. Любое движение — шум." : goal ? "Сейчас: " + goal.text : st.phase === "evening" ? "Закрыто. Ночь скоро. Можно задвинуть стеллаж к витрине и взять пауэрбанк." : "Жди. Слушай.";
     const se = $("aStep"); if (se.textContent !== step) se.textContent = step;
-    const o = st.phase === "evening" ? [[st.shutter >= 1, "Ролета до замка"], [st.locked, "Дверь на ключ"], [!st.lights, "Свет и вывеска"], [st.fridge, "Вода из холодильника"], [st.barricaded, "Стеллаж к витрине"], [st.powerbank, "Пауэрбанк"]]
+    const o = st.phase === "evening" ? [[st.shutter >= 1, "Ролета до замка"], [st.locked, "Дверь на ключ"], [!st.lights, "Свет и вывеска"], [st.shelvesTaken >= 6, `Вода ${st.shelvesTaken}/6 полок`], [st.barricaded, "Стеллаж к витрине"], [st.powerbank, "Пауэрбанк"]]
       : [[st.knock && st.knock.done, "Стук: решить"], [st.scratch && st.scratch.done, "Скрежет: замереть"]];
     const html = o.map(([ok, t]) => `<li class="${ok ? "ok" : ""}">${t}</li>`).join(""); const ob = $("aObj"); if (ob.innerHTML !== html) ob.innerHTML = html;
-    // nav buttons
-    const nav = [];
-    if (!st.move && st.mode === "look" && !st.inspect && !(st.scratch && st.scratch.on)) {
-      if (st.spot !== "out") { if (st.door === "open" && st.shutter < 0.95) nav.push(["out", st.shutter >= 0.6 ? "Пролезть наружу" : "Выйти на улицу"]); if (st.spot === "door") nav.push(["back", "Вглубь"]); }
-      else nav.push(["in", st.shutter >= 0.6 ? "Пролезть под ролету" : "Зайти внутрь"]);
-    }
-    nav.push(["sneak", st.sneak ? "Тихо: вкл" : "Тихо: выкл"]);
-    const key = nav.map(n => n.join(":")).join("|") + (goal && goal.nav);
-    const ne = $("aNav");
-    if (ne.dataset.key !== key) {
-      ne.dataset.key = key;
-      ne.innerHTML = nav.map(([id, t]) => `<button type="button" class="nbtn ${id === "sneak" && st.sneak ? "on" : ""} ${goal && goal.nav === id ? "glow" : ""}" data-n="${id}">${t}</button>`).join("");
-      ne.querySelectorAll("button").forEach(b => b.onclick = e => { e.stopPropagation(); const n = b.dataset.n; if (n === "out") navOut(); else if (n === "in") navIn(); else if (n === "back") goTo([], "in", st.sneak ? 0.9 : 0.5); else { st.sneak = !st.sneak; ne.dataset.key = ""; } });
-    }
+    const bc = $("bCrouch"); bc.classList.toggle("on", st.crouch); bc.classList.toggle("glow", !!(goal && goal.at && goal.at[1] < 0.6 && !st.crouch)); bc.textContent = st.crouch ? "Встать" : "Присесть";
+    const bs = $("bSneak"); bs.classList.toggle("on", st.sneak);
+    $("aBtns").hidden = st.mode !== "look" || !!st.inspect;
   }
   function loop(now) {
     if (!st) return;
@@ -1497,7 +1591,7 @@ const Action = (() => {
     if (!st) return;
     render(now); hud();
   }
-  return { start, stop, _st: () => st, _act: id => act(id), _nav: n => n === "out" ? navOut() : navIn(), _light: light, _cam: () => cam };
+  return { start, stop, _st: () => st, _act: id => act(id), _light: light, _keys: keys, _cam: () => cam };
 })();
 
 // ---------- engine ----------
