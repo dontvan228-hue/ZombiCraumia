@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--ARTIFACT-START-->
+<title>ZombiCraumia</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Mono&family=PT+Sans:wght@400;700&family=Russo+One&display=swap">
+<style>
+/* Layout: a vertical 9:16 "reel" card centered on a dark page: story progress bar, scene art, caption, countdown, choices. Single dark look by design. */
+:root {
+  --night: #0b0d12;
+  --card: #12151c;
+  --line: #262c38;
+  --ink: #ece8de;
+  --muted: #8d94a3;
+  --alarm: #e5483b;
+  --ok: #4fc685;
+  --warn: #f1b03f;
+  --f-display: "Russo One", "Arial Black", Impact, sans-serif;
+  --f-body: "PT Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --f-mono: "PT Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--night); color: var(--ink); font-family: var(--f-body); font-size: 16px;
+  display: grid; place-items: center; box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px;
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(229,72,59,.10), transparent 55%);
+}
+.reel {
+  width: min(460px, 100%); height: min(880px, 100%); min-height: 0;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  display: flex; flex-direction: column; position: relative; box-shadow: 0 30px 80px rgba(0,0,0,.5);
+}
+.top { padding: 12px 14px 8px; display: grid; gap: 9px; }
+.stories { display: flex; gap: 4px; min-height: 3px; }
+.stories i { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.18); overflow: hidden; position: relative; }
+.stories i.done { background: rgba(255,255,255,.85); }
+.stories i.now::after { content: ""; position: absolute; inset: 0; width: var(--p, 0%); background: #fff; }
+.meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.meta span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta b { color: var(--ink); font-weight: 400; flex: none; }
+.res { display: flex; gap: 6px; flex-wrap: wrap; min-height: 0; }
+.res span { font-family: var(--f-mono); font-size: 11px; padding: 2px 7px; border: 1px solid var(--line); border-radius: 20px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.res span b { color: var(--ink); font-weight: 400; }
+.res span.low b { color: var(--alarm); }
+
+.art { position: relative; flex: 0 0 auto; aspect-ratio: 16 / 10; max-height: 32vh; width: 100%; background: #07090d; }
+.art canvas { width: 100%; height: 100%; display: block; }
+.tag {
+  position: absolute; left: 12px; bottom: 10px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; background: rgba(0,0,0,.6); padding: 3px 7px; border-radius: 3px; color: var(--warn);
+}
+.body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.caption { font-size: 18px; line-height: 1.42; margin: 0; text-wrap: pretty; }
+.caption q { font-style: italic; color: #fff; }
+.ask { font-family: var(--f-display); font-size: 21px; line-height: 1.15; margin: 0; text-wrap: balance; }
+.ask span { color: var(--muted); font-family: var(--f-mono); font-size: 13px; }
+.timer { height: 6px; border-radius: 3px; background: #1e232d; overflow: hidden; }
+.timer i { display: block; height: 100%; width: 100%; background: var(--alarm); transform-origin: left; }
+.timer-l { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-bottom: -6px; }
+.timer-l b { color: var(--alarm); font-weight: 400; font-variant-numeric: tabular-nums; }
+.choices { display: grid; gap: 8px; }
+.choice {
+  text-align: left; font: inherit; font-size: 16px; line-height: 1.3; color: var(--ink); cursor: pointer;
+  background: #1a1f29; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start;
+}
+.choice:hover { border-color: #3b4456; background: #1e2430; }
+.choice:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
+.choice .k { font-family: var(--f-mono); font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; margin-top: 2px; flex: none; }
+.choice.sel { border-color: var(--warn); background: rgba(241,176,63,.1); }
+.choice.sel .k { color: #111; background: var(--warn); border-color: var(--warn); }
+.choice[disabled] { opacity: .45; cursor: default; }
+
+.locs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.loc {
+  text-align: left; font: inherit; color: var(--ink); cursor: pointer; background: #1a1f29; border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 11px; display: grid; gap: 4px; min-width: 0;
+}
+.loc:hover { border-color: #3b4456; }
+.loc:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
+.loc b { font-family: var(--f-display); font-weight: 400; font-size: 15px; line-height: 1.15; }
+.loc small { color: var(--muted); font-size: 13px; line-height: 1.3; }
+.loc em { font-style: normal; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .04em; color: var(--warn); }
+.loc.rnd { grid-column: 1 / -1; border-style: dashed; }
+
+.verdict { display: grid; gap: 10px; }
+.stamp {
+  justify-self: start; font-family: var(--f-display); font-size: 15px; letter-spacing: .06em; text-transform: uppercase;
+  padding: 4px 10px; border: 2px solid currentColor; border-radius: 4px; transform: rotate(-2deg);
+}
+.stamp.good { color: var(--ok); } .stamp.bad { color: var(--alarm); } .stamp.mid { color: var(--warn); }
+.outcome { font-size: 17px; line-height: 1.45; margin: 0; }
+.outcome q { font-style: italic; color: #fff; }
+.why { border-left: 3px solid var(--warn); padding: 4px 0 4px 12px; color: #cfcbc1; line-height: 1.45; font-size: 15px; }
+.why.good { border-color: var(--ok); } .why.bad { border-color: var(--alarm); }
+.why b { display: block; font-family: var(--f-mono); font-weight: 400; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--warn); margin-bottom: 3px; }
+.btn {
+  font-family: var(--f-display); font-size: 17px; letter-spacing: .02em; cursor: pointer;
+  background: var(--ink); color: #111; border: 0; border-radius: 10px; padding: 13px 18px;
+}
+.btn.red { background: var(--alarm); color: #fff; }
+.btn[disabled] { opacity: .4; cursor: default; }
+.btn:focus-visible { outline: 2px solid var(--warn); outline-offset: 3px; }
+
+.title-h { font-family: var(--f-display); font-weight: 400; font-size: clamp(38px, 11vw, 54px); line-height: .95; margin: 0; }
+.title-h span { color: var(--alarm); }
+.eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--warn); }
+.rules { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.rules li { display: grid; grid-template-columns: 28px 1fr; gap: 8px; line-height: 1.4; color: #cfcbc1; font-size: 15px; }
+.rules li b { font-family: var(--f-mono); font-weight: 400; color: var(--alarm); }
+.end-h { font-family: var(--f-display); font-weight: 400; font-size: 30px; line-height: 1.05; margin: 0; text-wrap: balance; }
+.score { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.score div { border-top: 1px solid var(--line); padding-top: 6px; font-family: var(--f-mono); }
+.score span { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.score strong { font-weight: 400; font-size: 22px; font-variant-numeric: tabular-nums; }
+.recap { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 14px; line-height: 1.4; }
+.recap li { display: grid; grid-template-columns: 14px 1fr; gap: 8px; color: #cfcbc1; }
+.recap li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--muted); }
+.recap li.good::before { background: var(--ok); } .recap li.bad::before { background: var(--alarm); } .recap li.mid::before { background: var(--warn); }
+.note { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.fade { animation: fade .35s ease-out; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.shake { animation: shake .4s; }
+@keyframes shake { 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+@media (prefers-reduced-motion: reduce) { .fade, .shake { animation: none; } }
+@media (max-height: 640px) { .art { max-height: 24vh; } .caption { font-size: 16px; } }
+@media (max-width: 360px) { .locs { grid-template-columns: 1fr; } }
+</style>
+<!--ARTIFACT-HEAD-END-->
+</head>
+<body>
+<!--ARTIFACT-BODY-START-->
+<main class="reel" id="reel">
+  <div class="top">
+    <div class="stories" id="stories"></div>
+    <div class="meta"><span id="place">ZombiCraumia</span><b id="clock">—</b></div>
+    <div class="res" id="res"></div>
+  </div>
+  <div class="art"><canvas id="art"></canvas><span class="tag" id="tag">Симферополь</span></div>
+  <div class="body" id="body"></div>
+</main>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const chance = p => Math.random() < p;
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---------- start locations (Симферополь) ----------
+const LOCS = {
+  home9:  { name: "Дом, 9 этаж", where: "ул. Балаклавская", place: "Кв. 47 · 9 этаж", sum: "Дома, высоко. Вода из крана, пока она есть.", res: "еда есть · воду надо набрать",
+            water: 0, food: 3, charge: 35, kind: "home", door: "door", clock: "21:14", art: "tv",
+            flow: ["news", "prep", "knock", "fire", "night", "supply", "radio"] },
+  home1:  { name: "Дом, 1 этаж", where: "ул. Жуковского", place: "Кв. 3 · 1 этаж", sum: "Окна на уровне улицы. Сюда можно просто влезть.", res: "еда есть · окна уязвимы",
+            water: 0, food: 3, charge: 40, kind: "home", door: "door", clock: "21:14", art: "tv",
+            flow: ["news", "prep", "window1", "night", "supply", "radio"] },
+  vape:   { name: "Вейп-шоп на Москольце", where: "площадь Москольцо", place: "Вейп-шоп · Москольцо", sum: "Ты на смене. Стеклянная витрина, ролета, подсобка.", res: "вода есть (кулер) · еды нет",
+            water: 19, food: 0, charge: 70, kind: "shop", door: "glass", clock: "20:47", art: "vape", supply: "продуктовый через дорогу, у остановки на Москольце",
+            flow: ["vapeOpen", "prep", "knock", "night", "supply", "radio"] },
+  store:  { name: "Продуктовый на Киевской", where: "ул. Киевская", place: "Магазин · Киевская", sum: "Ты зашёл за хлебом. В зале человек тридцать.", res: "еда вокруг · толпа и паника",
+            water: 2, food: 1, charge: 40, kind: "shop", door: "glass", clock: "20:31", art: "store",
+            flow: ["storeOpen", "prep", "knock", "night", "radio"] },
+  pharm:  { name: "Аптека на Пушкинской", where: "ул. Пушкинская", place: "Аптека · Пушкинская", sum: "Ты фармацевт. Сюда придут первые раненые.", res: "лекарства есть · еды нет",
+            water: 10, food: 0, charge: 50, kind: "shop", door: "glass", clock: "20:58", art: "pharm", meds: true, supply: "круглосуточный продуктовый в соседнем доме",
+            flow: ["pharmOpen", "prep", "night", "supply", "radio"] },
+  garage: { name: "Гараж у Залесской", where: "гаражный кооператив", place: "Гараж №112", sum: "Ты возишься с машиной. Бак полный, воды нет.", res: "машина есть · воды нет",
+            water: 0, food: 1, charge: 50, kind: "garage", door: "gate", clock: "19:52", art: "garage", car: true, supply: "сторожка кооператива, там кулер",
+            flow: ["garageOpen", "prep", "night", "supply", "radio"] },
+  street: { name: "Остановка на Кирова", where: "проспект Кирова", place: "Остановка · пр. Кирова", sum: "Ждёшь троллейбус. Ничего с собой, кроме телефона.", res: "ничего нет · самый сложный старт",
+            water: 0, food: 0, charge: 25, kind: "street", door: "door", clock: "20:12", art: "street",
+            flow: ["streetOpen", "shelter", "night", "supply", "radio"] },
+};
+const POINTS = ["Аэропорт «Симферополь»", "Стадион «Локомотив»", "Ж/д вокзал", "Площадь Ленина"];
+
+// ---------- state ----------
+let G;
+function newRun(locId) {
+  const L = LOCS[locId];
+  const names = shuffle(POINTS.slice()).slice(0, 3);
+  const kinds = shuffle(["safe", "overrun", "overrun"]);
+  G = {
+    locId, loc: L, flow: L.flow, fi: -1,
+    water: L.water, charge: L.charge, stress: 20, food: L.food,
+    f: { car: !!L.car, meds: !!L.meds }, log: [], good: 0, bad: 0,
+    points: names.map((n, i) => ({ name: n, kind: kinds[i], tried: false })),
+    guestBitten: chance(0.5), withGuest: false, guestName: L.kind === "home" ? "Лена" : "Даша", scouted: false, attempts: 0,
+  };
+}
+const clampRes = () => { G.water = Math.max(0, Math.round(G.water)); G.food = Math.max(0, G.food); G.charge = Math.max(0, Math.min(100, G.charge)); G.stress = Math.max(0, Math.min(100, G.stress)); };
+const NEXT = "@"; // continue along this start's flow
+
+// ---------- scenes ----------
+const S = {};
+
+// --- home openings ---
+S.news = {
+  label: "Новости", art: "tv", timer: 7,
+  place: g => g.loc.place, clock: "21:14",
+  text: g => `Экстренный выпуск «Крым 24»: в Симферополе люди нападают на прохожих и кусают их — на Москольце, у вокзала, на Кирова. Укушенные через несколько минут <q>встают снова</q>. Ведущий обрывается на полуслове.${g.locId === "home1" ? " За окном первого этажа кто-то бежит по двору." : ""}`,
+  ask: "Первые секунды. Что делаешь?",
+  choices: [
+    { t: "Набираю воду везде: ванна, чайник, кастрюли, все тазики", v: "good",
+      tip: "Воду и свет в ЧС отключают одними из первых. Полная ванна — это 150–200 литров: пить, готовить, мочить тряпки при пожаре. В Симферополе вода и так по графику — кран может пересохнуть через час.",
+      go: g => { g.water = 180; return { next: NEXT, out: "Шумит вода. Ванна, чайник, три кастрюли, ведро, даже бутылки из-под лимонада. Через сорок минут напор в кране слабеет." }; } },
+    { t: "Бегу в магазин у дома за едой", v: "bad",
+      tip: "В первые часы магазины — самое людное место. Давка, паника, и среди толпы уже есть укушенные, которые сами об этом не знают. Еда дома почти всегда есть на 3–5 дней.",
+      go: g => chance(0.5)
+        ? { end: "bitten", out: "У кассы давка. Мужчина в куртке хватается за твоё плечо, чтобы не упасть. На его шее — рваная рана. Поздно." }
+        : (g.food += 2, g.stress += 25, { next: NEXT, out: "Ты успел: две сумки консервов. По дороге назад кто-то кричал в соседнем дворе. Руки трясутся." }) },
+    { t: "Звоню родным, всех обзваниваю", v: "mid",
+      tip: "Сеть ложится через минуты из-за перегрузки. Короткое SMS проходит, когда звонки уже не соединяются. Пиши коротко: «Я дома, жив, сиди дома, набери воду».",
+      go: g => { g.charge -= 20; g.stress -= 5; return { next: NEXT, out: "Мама ответила с третьего раза. Связь рвётся. Ты теряешь пять минут и 20% заряда." }; } },
+    { t: "Выхожу на лестницу посмотреть, что происходит", v: "bad",
+      tip: "Любопытство — главный убийца в фильмах и в реальных ЧС. Информацию получай из окна, радио и новостей, а не своими глазами в подъезде.",
+      go: g => chance(0.35)
+        ? { end: "bitten", out: "На площадке кто-то сидит на корточках. Он поднимает голову и бросается быстрее, чем ты успеваешь закрыть дверь." }
+        : (g.stress += 20, { next: NEXT, out: "Снизу слышен крик и топот. Ты захлопываешь дверь. Ничего полезного ты не узнал." }) },
+  ],
+  timeout: { v: "bad", tip: "Ступор — нормальная реакция, но в ЧС первые минуты решают всё. Выучи заранее 2–3 действия «на автомате»: вода, дверь, заряд.",
+    go: g => { g.stress += 15; g.water = 20; return { next: NEXT, out: "Ты застыл перед телевизором. Когда наконец пошёл к крану, напор уже еле течёт. Успел набрать одно ведро." }; } },
+};
+
+S.window1 = {
+  label: "Окно", art: "window", timer: 9, place: g => g.loc.place, clock: "22:10",
+  text: g => `${g.f.windows1 ? "Сквозь щель между шкафом и рамой видно: " : ""}В окно первого этажа колотит мужчина. За ним по двору, метрах в тридцати, бредут двое. <q>Открой окно! Пусти, они идут!</q>`,
+  ask: "Он прямо за стеклом.",
+  choices: [
+    { t: "Открываю окно и затаскиваю его", v: "bad", tip: "Сначала проверка, потом помощь. Открытое окно первого этажа — это вход не только для него, но и для тех, кто идёт следом.",
+      go: g => chance(0.45) ? { end: "bitten", out: "Ты распахиваешь створку. Он хватается за твои руки — ладони мокрые и горячие. На предплечье свежий укус." }
+        : (g.withGuest = true, g.guestBitten = false, g.guestName = "Артём", { next: NEXT, out: "Ты затаскиваешь его внутрь и захлопываешь окно за секунду до того, как первый из них дотягивается до подоконника." }) },
+    { t: "Кричу через стекло: «Покажи руки и шею!»", v: "good", tip: "Как в роликах: «Покажи руки». Укусы чаще всего на кистях, предплечьях и шее. Проверка через стекло ничего не стоит.",
+      go: g => g.guestBitten
+        ? (g.stress += 15, { next: NEXT, out: "Он поднимает руки. На левой — укус, кровь течёт к локтю. Ты задёргиваешь штору и уходишь в коридор. Стук за окном продолжается долго." })
+        : (g.withGuest = true, g.guestName = "Артём", g.stress -= 10, { next: NEXT, out: "Руки, шея — чисто. Ты открываешь окно, он влезает, вы вдвоём подпираете раму шкафом. Его зовут Артём." }) },
+    { t: "Задёргиваю шторы и отхожу от окна", v: "mid", tip: "Безопасно, но человек снаружи привлекает к твоему окну тех, кто идёт следом. Первый этаж нужно укреплять заранее.",
+      go: g => { g.stress += 15; return { next: NEXT, out: "Он бьёт по стеклу ещё минуту, потом крик переходит в хрип. Ты не смотришь." }; } },
+  ],
+  timeout: { v: "mid", tip: "Пока ты думал, всё решилось за тебя.", go: g => { g.stress += 15; return { next: NEXT, out: "Стук прекращается. За окном шарканье." }; } },
+};
+
+// --- vape shop on Moskoltso ---
+S.vapeOpen = {
+  label: "Смена", art: "vape", timer: 8, place: g => g.loc.place, clock: "20:47",
+  text: "В шоп влетает парень без куртки: <q>На Москольце людей жрут! У остановки, у троллейбусов!</q> В зале ещё двое покупателей. За стеклом по кольцу бегут люди, сигналят машины.",
+  ask: "Ты один на смене. Что делаешь?",
+  choices: [
+    { t: "Опускаю ролету и закрываю дверь, покупатели остаются внутри", v: "good", tip: "Закрыться быстро — главное. Ролета и закрытая дверь отрезают тебя от улицы. Люди внутри уже проверены: никто из них не ранен.",
+      go: g => { g.f.shutter = true; g.stress += 5; return { next: NEXT, out: "Ролета с грохотом идёт вниз. Покупатели переглядываются: никто не хочет выходить. Теперь вас четверо." }; } },
+    { t: "Выгоняю всех и закрываюсь один", v: "mid", tip: "Ты сократил риск внутри, но остался один. Вместе легче дежурить, но любой новый человек — риск.",
+      go: g => { g.f.shutter = true; g.stress += 15; return { next: NEXT, out: "Ты выпроваживаешь всех и опускаешь ролету. Снаружи кто-то пытается её поднять и уходит." }; } },
+    { t: "Выхожу на крыльцо посмотреть, что на кольце", v: "bad", tip: "Москольцо — один из самых людных узлов города: остановки, рынок, кольцо. В первые минуты там больше всего укушенных.",
+      go: g => chance(0.35) ? { end: "bitten", out: "Ты выходишь на крыльцо. Женщина, бегущая мимо, врезается в тебя и вцепляется в плечо. Она уже не бежит — она нападает." }
+        : (g.stress += 20, { next: NEXT, out: "У остановки на земле лежат люди. Двое склонились над ними. Ты влетаешь обратно и опускаешь ролету." }) },
+    { t: "Продолжаю работать — наверное, это драка", v: "bad", tip: "Нормализация — классическая ошибка: «это не со мной, это просто драка». Если люди бегут в одну сторону — беги и ты, или закрывайся.",
+      go: g => { g.stress += 10; g.f.lateShutter = true; return { next: NEXT, out: "Через пять минут в витрину врезается тело. На стекле — кровь. Ты опускаешь ролету, руки не слушаются." }; } },
+  ],
+  timeout: { v: "bad", tip: "Застыть у кассы — потерять те самые первые секунды.", go: g => { g.stress += 15; return { next: NEXT, out: "Ты смотришь в окно, пока покупатели не выбегают сами. Ролету ты опускаешь только потом." }; } },
+};
+
+// --- grocery on Kievskaya ---
+S.storeOpen = {
+  label: "Магазин", art: "store", timer: 8, place: g => g.loc.place, clock: "20:31",
+  text: "Ты стоишь в очереди с хлебом и водой. Снаружи — крики. Охранник кричит: <q>Закрываю двери!</q> Толпа бросается к выходу, кто-то падает. У входа женщина держится за окровавленную шею.",
+  ask: "Что делаешь?",
+  choices: [
+    { t: "Ухожу вглубь, на склад, набирая по пути воду и консервы", v: "good", tip: "Против толпы не идут. Склад — помещение с одной дверью и запасами. Бери то, что даёт выжить: вода, консервы, никаких чипсов.",
+      go: g => { g.water += 15; g.food += 4; return { next: NEXT, out: "Ты сгребаешь в корзину две упаковки воды и консервы и проскальзываешь за дверь «Только для персонала»." }; } },
+    { t: "Бегу к выходу вместе со всеми", v: "bad", tip: "В давке гибнут чаще, чем от того, от чего бегут. И в толпе у выхода — та самая раненая женщина.",
+      go: () => chance(0.5) ? { end: "bitten", out: "Тебя прижимает к дверям. Рядом — та женщина с раной на шее. Её зубы оказываются у твоего плеча." }
+        : { next: NEXT, out: "Тебя выносит из дверей, и ты убегаешь обратно внутрь, на склад, через служебный вход. Без воды и без еды." } },
+    { t: "Помогаю женщине у входа", v: "bad", tip: "Кровь на шее в начале эпидемии — почти наверняка укус. Помогать можно, но не руками: дай бинт, отойди на два метра.",
+      go: () => ({ end: "bitten", out: "Ты прижимаешь ладонь к её ране. Через минуту она открывает глаза." }) },
+    { t: "Ложусь под стеллаж и жду", v: "mid", tip: "Спрятаться — хорошо, но под стеллажом нет ни двери, ни запасов, и тебя легко найти.",
+      go: g => { g.stress += 20; g.food += 1; return { next: NEXT, out: "Когда шум стихает, ты ползком добираешься до склада. По пути хватаешь пачку печенья." }; } },
+  ],
+  timeout: { v: "bad", tip: "Посреди толпы нельзя стоять.", go: g => { g.stress += 20; return { next: NEXT, out: "Толпа сносит тебя с ног. Ты отползаешь к складу, теряя корзину." }; } },
+};
+
+// --- pharmacy on Pushkinskaya ---
+S.pharmOpen = {
+  label: "Аптека", art: "pharm", timer: 9, place: g => g.loc.place, clock: "20:58",
+  text: "В аптеку заходит мужчина. Рука замотана футболкой, сквозь ткань сочится кровь. <q>Бинты, перекись, обезболивающее. Собака укусила.</q> Он бледный, лоб в поту, на Пушкинской за его спиной кто-то кричит.",
+  ask: "Он у прилавка.",
+  choices: [
+    { t: "Даю всё через ночное окошко и прошу выйти", v: "good", tip: "Помогать — да, касаться — нет. Ночное окошко аптеки как раз для этого: товар без контакта. Пот, бледность, свежий «укус собаки» — тревожные знаки.",
+      go: g => { g.stress += 5; return { next: NEXT, out: "Ты кладёшь пакет в лоток окошка. Он забирает и уходит, шатаясь. Ты закрываешь дверь на ключ." }; } },
+    { t: "Обрабатываю рану сам — я же фармацевт", v: "bad", tip: "Без перчаток, маски и понимания, что за инфекция, лучше не трогать рану. Здесь любое касание — заражение.",
+      go: () => ({ end: "bitten", out: "Ты разматываешь футболку. Это не собака. Он вздрагивает, и его пальцы сжимаются на твоём запястье." }) },
+    { t: "Отказываю и выгоняю", v: "mid", tip: "Безопасно, но жёстко. Можно было помочь без контакта: через окошко или выставив пакет за дверь.",
+      go: g => { g.stress += 10; return { next: NEXT, out: "Он ругается, бьёт кулаком по витрине и уходит. Ты закрываешь дверь." }; } },
+  ],
+  timeout: { v: "mid", tip: "Ты замешкался, и он сам взял бинты с полки и ушёл. Повезло.", go: g => { g.stress += 10; return { next: NEXT, out: "Он сгребает с полки бинты и выходит. Ты бросаешься закрывать дверь." }; } },
+};
+
+// --- garage ---
+S.garageOpen = {
+  label: "Гараж", art: "garage", timer: 8, place: g => g.loc.place, clock: "19:52",
+  text: "Радио в машине: <q>…в Симферополе массовые нападения, жителей просят не выходить…</q> По кооперативу кто-то бежит, хлопают ворота. Бак полный, ключ в замке.",
+  ask: "Что делаешь?",
+  choices: [
+    { t: "Закрываю ворота изнутри на засов и слушаю радио", v: "good", tip: "Сначала закрыться и понять, что происходит. Машина — хороший ресурс, но не в первый час, когда все дороги забиты.",
+      go: g => { g.f.door = true; return { next: NEXT, out: "Засов лязгает. Ты сидишь в темноте гаража и слушаешь эфир. Новостей всё больше." }; } },
+    { t: "Сразу еду домой через центр", v: "bad", tip: "В первый час все едут одновременно. Пробка — это ловушка: машина заперта, а стекло не защищает от толпы.",
+      go: g => chance(0.4) ? { end: "bitten", out: "На Киевской пробка. В стекло бьют руки, водительская дверь открывается — ты забыл заблокировать." }
+        : (g.stress += 25, g.f.car = false, { next: NEXT, out: "На Киевской пробка. Ты бросаешь машину и бегом возвращаешься в кооператив. Ворота закрываешь трясущимися руками." }) },
+    { t: "Иду к соседям по гаражам узнать новости", v: "mid", tip: "Информация ценна, но каждый выход — риск. Лучше спрашивать по телефону или через закрытые ворота.",
+      go: g => { g.stress += 10; g.food += 1; return { next: NEXT, out: "Дядя Коля из 108-го даёт тебе банку тушёнки и говорит: <q>Сиди тихо до утра, сынок</q>." }; } },
+  ],
+  timeout: { v: "mid", tip: "Пока ты думал, мимо пробежали люди. Ворота всё ещё открыты.", go: g => { g.stress += 10; return { next: NEXT, out: "Ты наконец закрываешь ворота." }; } },
+};
+
+// --- street ---
+S.streetOpen = {
+  label: "Улица", art: "street", timer: 7, place: g => g.loc.place, clock: "20:12",
+  text: "Ты ждёшь троллейбус на остановке. Со стороны Кирова, от ЦУМа, бежит толпа. Кто-то кричит <q>Они кусаются!</q> Рядом с тобой парень достал телефон и снимает.",
+  ask: "Что делаешь?",
+  choices: [
+    { t: "Бегу в ближайший подъезд и зову жильцов по домофону", v: "good", tip: "На улице главное — быстро уйти с открытого места в помещение с дверью. Подъезд, магазин, кафе.",
+      go: () => ({ next: NEXT, out: "Ты влетаешь в арку, жмёшь все кнопки домофона подряд. Дверь пищит — кто-то открыл." }) },
+    { t: "Бегу вместе с толпой", v: "bad", tip: "Толпа бежит туда, где все. Отделись от неё и ищи укрытие в стороне.",
+      go: () => chance(0.4) ? { end: "bitten", out: "Толпа редеет, ты остаёшься в хвосте. Кто-то сзади хватает тебя за капюшон." }
+        : { next: NEXT, out: "Через квартал ты отделяешься от толпы и ныряешь в первый открытый подъезд." } },
+    { t: "Снимаю на телефон — вдруг фейк", v: "bad", tip: "Пока ты снимаешь, ты не двигаешься. Видео не спасает, а заряд телефона пригодится.",
+      go: g => chance(0.35) ? { end: "bitten", out: "В кадре один из бегущих резко меняет направление. Прямо на тебя." }
+        : (g.charge -= 10, { next: NEXT, out: "Ты снимаешь, пока не видишь, как кто-то грызёт лежащего человека. Бежишь в ближайший подъезд." }) },
+    { t: "Залезаю на крышу остановки", v: "mid", tip: "Высота спасает от касаний, но ты в ловушке: спуститься некуда, вокруг собираются.",
+      go: g => { g.stress += 25; return { next: NEXT, out: "Ты сидишь на крыше остановки полчаса. Когда они разбредаются, спрыгиваешь и бежишь в ближайший подъезд." }; } },
+  ],
+  timeout: { v: "bad", tip: "На улице стоять на месте — хуже всего.", go: () => chance(0.3) ? { end: "bitten", out: "Ты стоишь, пока толпа не проносится мимо. Последний из бегущих — не человек." } : { next: NEXT, out: "Толпа проносится мимо. Ты бежишь в подъезд." } },
+};
+S.shelter = {
+  label: "Подъезд", art: "door", timer: 8, place: "Чужой подъезд · Кирова", clock: "20:20",
+  text: "На втором этаже приоткрывается дверь. Пожилой мужчина держит её на цепочке: <q>Стой там! Покажи руки! Шею покажи! Рукава закатай!</q>",
+  ask: "Теперь проверяют тебя.",
+  choices: [
+    { t: "Медленно показываю руки, шею, закатываю рукава", v: "good", tip: "Правило работает в обе стороны: тебя тоже будут проверять. Медленно, руки на виду, без резких движений.",
+      go: g => { g.water += 20; g.food += 2; g.stress -= 10; return { next: NEXT, out: "Он кивает, снимает цепочку. <q>Заходи. Я Виктор Петрович. Вода в ванне, суп на плите.</q>" }; } },
+    { t: "Толкаю дверь: «Пустите, некогда!»", v: "bad", tip: "Человек за дверью боится тебя так же, как ты их. Напор выглядит как нападение.",
+      go: g => { g.stress += 25; return { next: NEXT, out: "Дверь захлопывается. Ты всю ночь сидишь на лестнице между этажами, прислушиваясь к шагам." }; } },
+    { t: "Ухожу искать другой подъезд", v: "mid", tip: "Отказаться от проверки — значит потерять убежище.",
+      go: g => chance(0.3) ? { end: "bitten", out: "Во дворе темно. Ты не замечаешь фигуру у мусорных баков." } : (g.stress += 15, { next: NEXT, out: "Ты находишь открытый чердак в соседнем доме. Холодно и пыльно, но дверь закрывается." }) },
+  ],
+  timeout: { v: "mid", tip: "Молчание на проверке выглядит подозрительно.", go: g => { g.stress += 15; return { next: NEXT, out: "<q>Не хочешь — не надо</q>. Дверь закрывается." }; } },
+};
+
+// --- shared: one minute to prepare ---
+const PREP = {
+  home: g => [
+    { t: "Закрыть дверь на все замки и подпереть шкафом", v: "good", tip: "Дверь — твоя главная стена. Заражённые не открывают замки, но давят массой. Подпорка решает.", go: g => { g.f.door = true; } },
+    { t: "Зарядить телефон и пауэрбанк до 100%", v: "good", tip: "Свет отключат. Заряд — это связь, фонарик и звонок 112.", go: g => { g.charge = 100; } },
+    { t: "Выключить свет, задёрнуть шторы", v: "good", tip: "Ночью горящее окно видно за километр — и мародёрам, и тем, кто идёт на свет и движение.", go: g => { g.f.dark = true; } },
+    { t: "Собрать тревожный рюкзак: документы, аптечка, фонарь, вода", v: "good", tip: "Если придётся уходить, на сборы будет 30 секунд. Рюкзак у двери — это и есть план эвакуации.", go: g => { g.f.bag = true; } },
+    ...(g.locId === "home1" ? [{ t: "Заставить окна шкафами и матрасами", v: "good", tip: "На первом этаже окно — вторая дверь. Мебель у окна выигрывает минуты.", go: g => { g.f.windows1 = true; } }]
+      : [{ t: "Открыть окна, чтобы слышать улицу", v: "bad", tip: "Открытые окна пропускают звук наружу, а при пожаре в доме — дым внутрь.", go: g => { g.f.windows = true; } }]),
+    { t: "Включить музыку погромче, чтобы не паниковать", v: "bad", tip: "Звук — главный ориентир для заражённых. Тишина в квартире — это маскировка.", go: g => { g.f.loud = true; g.stress -= 10; } },
+    { t: "Выложить сторис: «Я дома, у меня есть вода»", v: "mid", tip: "Родным пиши лично. Публичный пост с адресом и запасами читают все, включая тех, кто придёт за водой.", go: g => { g.f.posted = true; } },
+  ],
+  shop: g => [
+    { t: g.locId === "vape" ? "Выключить неоновую вывеску и свет в зале" : "Выключить свет в зале и витрине", v: "good", tip: "Светящаяся витрина ночью — маяк на всю улицу. Темнота — лучшая маскировка.", go: g => { g.f.dark = true; } },
+    { t: "Подпереть стеклянную дверь стеллажом", v: "good", tip: "Стекло держит удар хуже, чем кажется. Тяжёлая мебель у двери — дополнительный барьер.", go: g => { g.f.door = true; } },
+    { t: "Проверить чёрный ход и подсобку", v: "good", tip: "Всегда знай второй выход. Он же — второй вход, его тоже надо закрыть.", go: g => { g.f.backdoor = true; } },
+    ...(g.locId === "vape" ? [{ t: "Перелить воду из кулера в бутылки, чтобы взять с собой", v: "good", tip: "19-литровая бутыль не унесёшь. Вода в пол-литровых бутылках — это вода, которую можно взять в дорогу.", go: g => { g.f.bottles = true; } }] : []),
+    ...(g.locId === "pharm" ? [{ t: "Собрать аптечку: бинты, антисептик, обезболивающее, регидрон", v: "good", tip: "Ты в лучшем месте города для этого. Аптечка пригодится и тебе, и как плата за помощь.", go: g => { g.f.bag = true; } }] : []),
+    ...(g.locId === "store" ? [{ t: "Набить рюкзак консервами и водой со склада", v: "good", tip: "Тушёнка, крупы, вода — не скоропорт. Это неделя жизни в одном рюкзаке.", go: g => { g.f.bag = true; g.food += 3; g.water += 10; } }] : []),
+    { t: "Зарядить телефон и пауэрбанки, пока есть свет", v: "good", tip: "Свет отключат. Заряд — это связь, фонарик и звонок 112.", go: g => { g.charge = 100; } },
+    { t: "Оставить вывеску гореть — пусть люди видят, что открыто", v: "bad", tip: "Свет приводит всех: и людей, и тех, кто идёт на свет.", go: g => { g.f.lit = true; } },
+    { t: "Выложить сторис: «Я на смене, тут безопасно»", v: "mid", tip: "Публичный пост о том, где ты и что у тебя есть, читают все.", go: g => { g.f.posted = true; } },
+  ],
+  garage: g => [
+    { t: "Найти воду: канистры, бутылки в багажнике", v: "good", tip: "Поищи всё: бутылка в багажнике, вода в бачке омывателя — только техническая. Пить можно только то, что из бутылок.", go: g => { g.water += 3; } },
+    { t: "Зарядить телефон от машины", v: "good", tip: "Машина — это генератор. Но не держи двигатель заведённым в закрытом гараже: угарный газ убивает быстрее зомби.", go: g => { g.charge = 100; } },
+    { t: "Погреться: завести машину и закрыть ворота", v: "bad", tip: "Работающий двигатель в закрытом гараже — угарный газ. Без запаха и цвета. Это реально убивает каждый год.", go: g => { g.f.co = true; } },
+    { t: "Собрать рюкзак: фонарь, инструменты, монтировку", v: "good", tip: "Монтировка — не оружие, а ключ: открыть дверь, ворота, люк.", go: g => { g.f.bag = true; } },
+    { t: "Выключить свет и сидеть тихо", v: "good", tip: "Свет из щели под воротами виден по всему кооперативу.", go: g => { g.f.dark = true; } },
+    { t: "Включить радио погромче", v: "bad", tip: "Слушай в наушниках или очень тихо. Звук привлекает.", go: g => { g.f.loud = true; } },
+  ],
+};
+S.prep = {
+  label: "Минута", art: g => g.loc.kind === "home" ? "flat" : g.loc.art, timer: 16, multi: 3, place: g => g.loc.place, clock: "21:20",
+  text: g => g.loc.kind === "home" ? (g.water > 100 ? "Вода набрана. В подъезде пока тихо. Есть минута, пока внизу не начался шум." : "В подъезде пока тихо. Есть минута, пока внизу не начался шум.")
+    : g.loc.kind === "shop" ? (g.locId === "store" ? "Ты на складе. Охранник куда-то пропал. Дверь склада закрывается изнутри. Есть минута." : "Ролета опущена. На улице крики и сигнализации. Есть минута, чтобы подготовиться.")
+    : "Ворота закрыты. В кооперативе пока тихо. Есть минута.",
+  ask: "Выбери три дела",
+  choices: g => PREP[g.loc.kind](g),
+  timeout: { v: "mid", tip: "Если не успел выбрать — сделай хотя бы одно: закрой дверь. Это базовое действие.", go: g => { g.f.door = true; } },
+  after: g => {
+    if (g.f.co) return { end: "co", out: "Тепло, гудит мотор. Ты засыпаешь в машине. Ворота закрыты." };
+    if (g.locId === "vape" && !g.f.bottles) g.water = Math.min(g.water, 19);
+    return null;
+  },
+};
+
+// --- shared: knock ---
+S.knock = {
+  label: "Гости", art: g => g.loc.door === "glass" ? g.loc.art : "door", timer: 9, place: g => g.loc.place, clock: "22:02",
+  enter: g => { if (g.loc.door === "glass") g.guestName = "Даша"; },
+  text: g => g.loc.door === "glass"
+    ? `${g.f.lit ? "Вывеска горит, и на свет пришли. " : ""}В ${g.f.shutter ? "ролету" : "дверь"} колотят. Девичий голос: <q>Откройте! Я с остановки, они везде! Пожалуйста!</q>`
+    : `${g.f.loud ? "Музыка ещё играет, когда " : ""}в дверь колотят. Голос соседки с 8-го этажа: <q>Пусти, пожалуйста! Они на лестнице! Я одна!</q>`,
+  ask: "Что делаешь?",
+  choices: [
+    { t: "Открываю сразу — человек же в беде", v: "bad", tip: "Сначала проверка, потом помощь. Пустить человека, не посмотрев на руки и шею, — значит поставить на кон и себя, и его.",
+      go: g => { if (chance(g.f.door ? 0.15 : 0.3)) return { end: "bitten", out: "Ты открываешь. За ней из темноты выныривает чья-то рука и хватает тебя за запястье." };
+        g.withGuest = true; return { next: NEXT, out: `Она влетает внутрь, ты закрываешь. Она плачет и держится за руку. Её зовут ${g.guestName}.` }; } },
+    { t: g => g.loc.door === "glass" ? "Приподнимаю ролету на ладонь: «Покажи руки и шею»" : "Говорю через дверь: «Покажи руки и шею в глазок»", v: "good",
+      tip: "Как в роликах: «Покажи руки». Укусы чаще всего на кистях, предплечьях и шее. Проверка занимает 10 секунд и ничего не стоит.",
+      go: () => ({ next: "peephole", out: "Секунда тишины. Потом она поднимает руки." }) },
+    { t: "Молчу и не подхожу", v: "mid", tip: "Не открывать — безопасно, но человек снаружи может стать союзником: вдвоём легче дежурить ночью.",
+      go: g => { g.stress += 15; return { next: NEXT, out: "Она стучит ещё минуту, потом её шаги удаляются. Ты долго не можешь отойти." }; } },
+  ],
+  timeout: { v: "mid", tip: "Нерешительность тоже решение: ты не открыл.", go: g => { g.stress += 10; return { next: NEXT, out: "Пока ты думал, стук прекратился." }; } },
+};
+S.peephole = {
+  label: "Проверка", art: "peephole", timer: 9, place: g => g.loc.place, clock: "22:03",
+  text: g => g.guestBitten
+    ? "Она поднимает руки. На правом запястье — свежая повязка, сквозь бинт проступает кровь. <q>Это я порезалась, честно! Пусти!</q>"
+    : "Она поднимает руки, поворачивается, оттягивает воротник. Руки и шея чистые. Только ссадина на колене — упала, когда бежала.",
+  ask: g => g.guestBitten ? "Повязка на руке. Решай." : "Чисто. Решай.",
+  choices: g => g.guestBitten ? [
+    { t: "Впускаю. Вдруг правда порезалась", v: "bad", tip: "Свежая повязка на руке в первые часы — главный тревожный знак. Укушенные часто скрывают укус, даже от себя.", go: g => { g.withGuest = true; return { next: NEXT, out: "Ты открываешь. Она благодарит и сразу уходит в угол, прижимая руку к груди." }; } },
+    { t: "Не открываю. Подсказываю, где спрятаться", v: "good", tip: "Жёстко, но правильно. Ты не бросил её совсем — подсказал, куда идти. Помочь можно и не открывая.", go: g => { g.stress += 10; return { next: NEXT, out: "Она долго молчит, потом уходит. Через час снаружи слышны тяжёлые, медленные шаги." }; } },
+    { t: "Передаю бутылку воды в щель", v: "mid", tip: "Доброе дело, но каждое открытие — риск контакта. Помогай через закрытую щель, без касаний.", go: g => chance(0.3) ? { end: "bitten", out: "Ты приоткрываешь щель. Её пальцы цепляются за твою руку — уже не её пальцы." } : (g.water -= 1, { next: NEXT, out: "Она хватает бутылку и уходит. Ты закрываешь и долго моешь руки." }) },
+  ] : [
+    { t: "Впускаю", v: "good", tip: "Проверка пройдена — помогай. Вдвоём можно дежурить по очереди и делить работу.", go: g => { g.withGuest = true; g.stress -= 15; g.food += 1; return { next: NEXT, out: `Её зовут ${g.guestName}. В рюкзаке у неё пачка печенья и пауэрбанк.` }; } },
+    { t: "Всё равно не открываю", v: "mid", tip: "Осторожность понятна, но проверка показала: человек чист. Союзник повышает шансы.", go: g => { g.stress += 10; return { next: NEXT, out: "Она уходит, всхлипывая." }; } },
+  ],
+  timeout: { v: "mid", tip: "Ты не решился.", go: () => ({ next: NEXT, out: "Она устала ждать и ушла." }) },
+};
+
+// --- fire (high floor only) ---
+S.fire = {
+  label: "Пожар", art: "smoke", timer: 9, place: g => g.loc.place, clock: "01:30",
+  text: g => `Запах гари. В окне подъезда — оранжевые отсветы: горит 5-й этаж. Ты на 9-м. Дым поднимается по лестнице${g.f.windows ? ", и через открытые окна он уже тянется в комнату" : ""}.`,
+  ask: "Пожар ниже тебя. Твои действия?",
+  choices: [
+    { t: "Бегу вниз по лестнице, пока не поздно", v: "bad", tip: "Пожар ниже — вниз не бежать. Дым поднимается быстрее человека, на лестнице ноль видимости, а внизу ещё и заражённые.", go: () => chance(0.7) ? { end: "smoke", out: "На 7-м этаже дым такой, что ты не видишь своих рук. Ты кашляешь, теряешь перила…" } : { end: "bitten", out: "Ты прорвался сквозь дым до 4-го. Там, в темноте, кто-то стоит на площадке." } },
+    { t: "Вызываю лифт", v: "bad", tip: "Лифт при пожаре — ловушка: шахта работает как труба для дыма, электричество отключается, кабина застревает.", go: () => ({ end: "smoke", out: "Лифт приходит. На 6-м он дёргается и встаёт. Через щели ползёт дым." }) },
+    { t: "Мочу тряпки и затыкаю щели под входной дверью", v: "good", tip: "Мокрая ткань под дверью держит дым. Квартира с закрытой дверью защищает от огня 30–60 минут. Остаёшься внутри и ждёшь помощи.", go: g => {
+      if (g.water >= 10) { g.water -= 10; return { next: "fire2", out: "Ты черпаешь воду из ванны, мочишь полотенца и плотно затыкаешь щель. Дым больше не просачивается." }; }
+      g.stress += 15; return { next: "fire2", out: "Ты открываешь кран — оттуда только хрип. Воды нет. Ты мочишь тряпки остатками из чайника, их хватает едва на одну щель." }; } },
+    { t: "Выхожу на балкон и зову на помощь", v: "mid", tip: "Балкон — правильное место, если дым уже в квартире. Но сначала закрой щели, а кричать в зомби-апокалипсис — звать всех подряд.", go: g => { g.stress += 10; return { next: "fire2", out: "Внизу на твой крик оборачиваются несколько фигур. Они медленно идут к подъезду." }; } },
+  ],
+  timeout: { v: "bad", tip: "Запомни: пожар ниже — закрыться, мокрая ткань под дверь, звонок 112.", go: g => { g.stress += 20; return { next: "fire2", out: "Пока ты думал, в прихожей повисла сизая пелена." }; } },
+};
+S.fire2 = {
+  label: "Пожар", art: "smoke", timer: 9, place: g => g.loc.place, clock: "01:41",
+  text: g => `${g.withGuest ? g.guestName + " кашляет. " : ""}Дыма в квартире всё больше. Пожар внизу не утихает.`,
+  ask: "Что дальше?",
+  choices: [
+    { t: "Звоню 112 и называю адрес, этаж и номер квартиры", v: "good", tip: "Даже в хаосе пожарные приоритетно едут на жилые дома. Точный адрес, этаж и «в квартире люди» — три вещи, которые надо сказать.", go: g => {
+      if (g.charge < 15) { g.stress += 20; return { next: NEXT, out: "Телефон гаснет на первом гудке. Заряда нет. Ты ложишься на пол и ждёшь." }; }
+      g.charge -= 15; return { next: NEXT, out: "Диспетчер говорит, что машина рядом. Через сорок минут сирена воет у подъезда, огонь гасят." }; } },
+    { t: "Ложусь на пол у окна, дышу через мокрую ткань", v: "good", tip: "У пола воздух чище: дым и жар собираются наверху. Мокрая ткань у лица фильтрует часть сажи.", go: g => { g.stress += 5; return { next: NEXT, out: "Ты лежишь у окна с мокрым полотенцем. К утру огонь гаснет: бетонные перекрытия выдержали." }; } },
+    { t: "Распахиваю окна и входную дверь для сквозняка", v: "bad", tip: "Сквозняк — это кислород для огня и тяга, которая втягивает дым из подъезда в квартиру. Окно открывают только в комнате с закрытой дверью.", go: g => chance(0.5) ? { end: "smoke", out: "Тяга втягивает дым из подъезда, как в трубу. Через минуту в квартире ничего не видно." } : (g.stress += 25, { next: NEXT, out: "Дым валит внутрь. Ты успеваешь захлопнуть дверь и полчаса кашляешь на балконе." }) },
+  ],
+  timeout: { v: "mid", tip: "При задымлении: пол, мокрая ткань, окно в изолированной комнате, звонок 112.", go: g => { g.stress += 15; return { next: NEXT, out: "Ты сидишь в ванной с мокрым полотенцем на лице. К утру огонь утихает." }; } },
+};
+
+// --- shared: night ---
+S.night = {
+  label: "Ночь", art: "night", timer: 9, place: g => g.loc.place, clock: "03:40",
+  text: g => {
+    if (g.withGuest && g.guestBitten) return `${g.guestName} тяжело дышит в углу. Горячий лоб, повязка на руке почернела. Она не отвечает на имя и медленно поворачивает голову на звук твоих шагов.`;
+    const hunger = g.food <= 0 ? " Живот сводит: ты не ел с обеда." : "";
+    const where = g.loc.door === "glass" ? `скребёт по ${g.f.shutter ? "ролете" : "стеклу"}` : g.loc.door === "gate" ? "трётся о ворота гаража" : "царапает входную дверь";
+    return `${g.f.posted ? "Кто-то нашёл твою сторис. " : ""}Тишину режет скрежет: кто-то ${where}. Медленно, без остановки${g.f.door ? ". Подпорка скрипит, но держит" : ""}.${hunger}`;
+  },
+  ask: g => g.withGuest && g.guestBitten ? "Она обращается. Сейчас." : "Что делаешь?",
+  choices: g => g.withGuest && g.guestBitten ? [
+    { t: g.loc.kind === "home" ? "Запираю её в ванной и подпираю дверь" : "Запираю её в подсобке и подпираю дверь", v: "good", tip: "Жестокий выбор, но правильный: изолировать, не касаясь. Заманить звуком, закрыть дверь, подпереть.", go: g => { g.stress += 25; if (g.loc.kind === "home") g.water = Math.min(g.water, 20); g.withGuest = false; return { next: NEXT, out: `Ты заманиваешь её звуком и захлопываешь дверь. Всю ночь изнутри скребут.${g.loc.kind === "home" ? " Воду из ванны ты потерял." : ""}` }; } },
+    { t: "Подхожу проверить — может, это просто жар", v: "bad", tip: "Никогда не подходи к человеку с признаками обращения. Жар, мутный взгляд, реакция только на звук — дистанция несколько метров.", go: () => ({ end: "bitten", out: "Ты кладёшь ладонь ей на лоб. Она открывает глаза." }) },
+    { t: "Убегаю наружу", v: "mid", tip: "Бегство спасает сейчас, но ты остаёшься без убежища и запасов в 4 утра.", go: g => chance(0.5) ? { end: "bitten", out: "Снаружи темно. Ты спотыкаешься о кого-то, кто сидит у входа." } : (g.water = 0, g.food = 0, g.stress += 30, g.withGuest = false, { next: NEXT, out: "Ты прячешься в соседнем подъезде до утра. Вода и еда остались там." }) },
+  ] : [
+    { t: "Свечу фонариком, чтобы посмотреть, кто там", v: "bad", tip: "Свет и движение выдают, что внутри кто-то есть. Заражённые реагируют на свет, звук и запах.", go: g => { g.stress += 15; if (!g.f.door && chance(0.4)) return { end: "bitten", out: "Ты подносишь фонарь. Удар — замок вылетает." }; return { next: NEXT, out: "Серое лицо с открытым ртом. Скрежет переходит в удары. До рассвета он не уходит." }; } },
+    { t: "Ухожу вглубь и сижу тихо", v: "good", tip: "Тишина и неподвижность — лучшая маскировка. Не провоцируй. Через какое-то время он потеряет интерес.", go: g => { g.stress += 5; return { next: NEXT, out: "Ты сидишь в дальнем углу, не дыша. Через полчаса скрежет стихает, шаги удаляются." }; } },
+    { t: "Кричу: «Кто там?!»", v: "bad", tip: "Голос — подтверждение, что внутри живой. Если надо говорить — тихо и коротко.", go: g => { g.stress += 20; return { next: NEXT, out: "Скрежет замирает. Потом начинают бить всем телом. К утру их трое." }; } },
+  ],
+  timeout: { v: "mid", tip: "Замереть в страхе — тоже тишина. Сработало.", go: g => { g.stress += 10; return { next: NEXT, out: "Ты застыл, не дыша. К утру всё стихло." }; } },
+};
+
+// --- shared: supplies (only if something is missing) ---
+S.supply = {
+  label: "Запасы", art: "dawn", timer: 10, place: g => g.loc.place, clock: "06:15",
+  skip: g => g.food > 0 && g.water >= 5,
+  text: g => {
+    const noWater = g.water < 5, noFood = g.food <= 0;
+    const what = noWater && noFood ? "Нет ни воды, ни еды." : noWater ? "Воды почти не осталось. Пить хочется так, что больно глотать." : "Еды нет. Вода есть, но живот сводит, голова кружится.";
+    return `Рассвет. ${what} ${g.loc.supply ? "Ближайший шанс — " + g.loc.supply + "." : "В доме напротив разбита витрина магазина."}`;
+  },
+  ask: "Как быть с запасами?",
+  choices: g => {
+    const noWater = g.water < 5;
+    const list = [
+      { t: "Выхожу сейчас, на рассвете: тихо, быстро, только самое нужное", v: "good", tip: "Рассвет — лучшее время для вылазки: светло, а улицы пусты. План заранее: куда, что взять, как вернуться. Не больше 10 минут.",
+        go: g => chance(g.f.dark ? 0.1 : 0.18) ? { end: "bitten", out: "Между стеллажами темно. Ты тянешься к полке с водой, и из-под неё тебя хватают за руку." }
+          : (g.food += 3, g.water += 12, { next: NEXT, out: "Ты возвращаешься через восемь минут: пять бутылок воды, тушёнка, хлебцы. Сердце колотится, но руки целы." }) },
+      { t: "Иду прямо сейчас, пока темно — меня не увидят", v: "bad", tip: "В темноте не видишь ты, а они ориентируются на звук. Ночные вылазки — для тех, у кого есть фонарь, план и напарник.",
+        go: () => chance(0.45) ? { end: "bitten", out: "Ты не видишь, что лежащий у входа человек шевелится." } : (G.food += 2, G.water += 6, { next: NEXT, out: "Ты наощупь сгребаешь что-то с полок и бегом возвращаешься. Повезло." }) },
+    ];
+    if (noWater) list.push({ t: g.loc.kind === "garage" ? "Пью из радиатора машины" : "Сливаю воду из бачка унитаза и бойлера, кипячу", v: g.loc.kind === "garage" ? "bad" : "good",
+      tip: g.loc.kind === "garage" ? "В радиаторе антифриз — он ядовит. Даже немного вызывает тяжёлое отравление." : "В бачке унитаза (не в чаше!) и в бойлере десятки литров водопроводной воды. Прокипяти — и её можно пить.",
+      go: g => g.loc.kind === "garage" ? { end: "poison", out: "Сладковатый вкус. Через час тебя скручивает." } : (g.water += 15, { next: NEXT, out: "Бачок, бойлер, батарея — набирается почти двадцать литров. На газовой горелке ты кипятишь первую кастрюлю." }) });
+    else list.push({ t: "Не рискую: без еды можно продержаться, вода есть", v: "good", tip: "Правило трёх: 3 минуты без воздуха, 3 дня без воды, 3 недели без еды. Если вода есть, голод — не повод рисковать жизнью.",
+      go: g => { g.stress += 15; return { next: NEXT, out: "Ты пьёшь воду маленькими глотками и обманываешь желудок. Голова кружится, но ты в безопасности." }; } });
+    return list;
+  },
+  timeout: { v: "mid", tip: "Ты не решился. Хорошо, если вода есть.", go: g => { g.stress += 15; if (g.water < 5) return { end: "thirst", out: "Ты ждёшь ещё сутки. Потом ещё." }; return { next: NEXT, out: "Ты остаёшься на месте, голодный." }; } },
+};
+
+// --- radio & choosing a point ---
+S.radio = {
+  label: "Радио", art: "radio", timer: 0, place: g => g.loc.place, clock: "07:10",
+  text: g => `Свет отключён. ${g.loc.kind === "street" ? "Виктор Петрович включает приёмник на батарейках" : "Ты находишь сигнал на телефоне"}: <q>…говорит штаб. Пункты эвакуации Симферополя: ${g.points.map(p => p.name).join(", ")}. Работают до 14:00. Дальше колонны идут на Севастополь. Повторяю…</q>`,
+  ask: "Как будешь выбирать пункт?",
+  choices: [
+    { t: "Поднимаюсь на крышу и смотрю на пункты сверху", v: "good", tip: "Разведка до выхода. Пункты эвакуации падают первыми: туда стекаются люди, а среди них есть укушенные. Сначала посмотри издалека.", go: g => { g.scouted = true; return { next: "choose", out: "С крыши видно полгорода: от Петровских скал до вокзала. Ты долго всматриваешься." }; } },
+    { t: "Слушаю эфир дальше — может, что-то скажут", v: "mid", tip: "Радио полезно, но слухи в эфире — не факт. Сверяй с тем, что видишь сам.", go: g => { g.rumor = true; return { next: "choose", out: "Сквозь шум прорывается чужой голос." }; } },
+    { t: "Сразу иду в ближайший", v: "bad", tip: "Ближайший — не значит безопасный. Минута разведки дешевле, чем выход в толпу заражённых.", go: () => ({ next: "choose", out: "Ты собираешься и выходишь. Решать придётся по дороге." }) },
+  ],
+};
+const LOOK = {
+  safe: ["над ним кружит вертолёт, по периметру прожекторы, у ворот очередь стоит спокойно", "видны военные «Уралы», люди проходят по одному через пост"],
+  overrun: ["ворота распахнуты, у входа горит машина, внутри фигуры медленно бредут по кругу", "никакого движения у поста, на земле лежат люди, над зданием — чёрный дым"],
+};
+S.choose = {
+  label: "Радио", art: "roof", timer: 0, place: "Симферополь", clock: "07:40",
+  text: g => {
+    if (g.scouted) return g.points.filter(p => !p.tried).map(p => `<b>${esc(p.name)}</b>: ${p.look || (p.look = pick(LOOK[p.kind]))}.`).join("<br>");
+    if (g.rumor && !g.rumorText) { const lie = chance(0.5); const p = lie ? pick(g.points.filter(x => x.kind !== "safe")) : g.points.find(x => x.kind === "safe"); g.rumorText = `Чужой голос в эфире: <q>…кто слышит, идите на ${esc(p.name)}! Там солдаты, там нормально!</q> Можно ли ему верить — неизвестно.`; }
+    return g.rumorText || "Ты ничего не знаешь о пунктах. Придётся выбрать наугад.";
+  },
+  ask: g => g.attempts ? "Куда теперь?" : "Куда идёшь?",
+  choices: g => g.points.filter(p => !p.tried).map(p => ({ t: p.name, v: "mid", noVerdict: true, go: g => { g.target = p; return { next: "route" }; } })),
+};
+S.route = {
+  label: "Путь", art: "street", timer: 9, place: "Симферополь", clock: "08:05",
+  text: g => `Путь до пункта «${esc(g.target.name)}». ${g.f.bag ? "Рюкзак за спиной." : "Рюкзака нет — берёшь что успеваешь."}${g.withGuest ? " " + g.guestName + " идёт за тобой." : ""}`,
+  ask: "Как пойдёшь?",
+  choices: g => [
+    { t: "По проспекту Кирова: быстро и прямо", v: "bad", tip: "Широкие улицы — место, где скапливаются брошенные машины, толпы и заражённые. Тебя видно издалека.", go: g => { g.risk = 0.35; return { next: "meet" }; } },
+    { t: "Дворами и вдоль Салгира", v: "good", tip: "Дворы и набережная дают укрытия и несколько путей отхода. Двигайся вдоль стен, останавливайся на углах, сначала слушай.", go: g => { g.risk = 0.15; return { next: "meet" }; } },
+    { t: "Через гаражи и частный сектор", v: "mid", tip: "Заборы и крыши гаражей спасают от касаний, но там легко оказаться в тупике.", go: g => { g.risk = 0.2; return { next: "meet" }; } },
+    ...(g.f.car ? [{ t: "На машине в объезд, через Залесскую", v: "mid", tip: "Машина быстрая, но главные выезды забиты. Объездные дороги — шанс, если двери заблокированы и окна закрыты.", go: g => chance(0.5) ? (g.risk = 0.1, { next: "meet", out: "Объезд почти пуст. Ты бросаешь машину за два квартала до пункта, где дорога перегорожена." }) : (g.risk = 0.25, { next: "meet", out: "На повороте пробка из брошенных машин. Ты выходишь и идёшь пешком." }) }] : []),
+  ],
+  timeout: { v: "mid", tip: "Маршрут нужно продумать до выхода.", go: g => { g.risk = 0.3; return { next: "meet", out: "Ты выходишь наугад." }; } },
+};
+S.meet = {
+  label: "Путь", art: "street", timer: 8, place: "Симферополь", clock: "08:30",
+  enter: g => { g.meet = pick(["car", "corner", "kid"]); },
+  text: g => ({
+    car: "Из перевёрнутой маршрутки машет мужчина: <q>Помоги! Ногу зажало!</q> Его штанина в крови. Он тянет к тебе руку.",
+    corner: "За углом, спиной к тебе, стоит заражённый. Покачивается. До него шагов десять, и он перекрывает проход.",
+    kid: "На детской площадке плачет девочка лет семи. Рядом лежит взрослый, лицом вниз, и не двигается.",
+  }[g.meet]),
+  ask: "Что делаешь?",
+  choices: g => ({
+    car: [
+      { t: "Подхожу и помогаю вытащить ногу", v: "bad", tip: "Кровь может быть и от укуса. Если нельзя проверить — помогай без касания: кинь ремень, подай палку.", go: () => chance(0.5) ? { end: "bitten", out: "Ты наклоняешься. Его пальцы смыкаются на твоём запястье. Глаза уже мутные." } : { next: "gate", out: "Ты вытаскиваешь его. Он хромает в другую сторону. Тебе повезло." } },
+      { t: "Кидаю ему ремень с расстояния", v: "good", tip: "Помощь без контакта: ремень, верёвка, палка. Так ты помогаешь и не рискуешь.", go: () => ({ next: "gate", out: "Он тянет за ремень и выбирается. Нога в укусах. Ты отпускаешь ремень и уходишь." }) },
+      { t: "Обхожу по широкой дуге", v: "mid", tip: "Безопасно. Тяжело, но спасти всех нельзя.", go: () => ({ next: "gate", out: "Он кричит тебе вслед. Через минуту крики обрываются." }) },
+    ],
+    corner: [
+      { t: "Замираю, потом медленно обхожу по другой стороне", v: "good", tip: "Медленное движение и тишина. Не беги рядом с заражённым: бег — это шум.", go: () => ({ next: "gate", out: "Ты крадёшься вдоль стены напротив. Он не поворачивается." }) },
+      { t: "Кидаю камень в другую сторону", v: "good", tip: "Отвлечение звуком: брошенный предмет уводит внимание. Кидай подальше от своего пути.", go: () => ({ next: "gate", out: "Камень звенит о мусорный бак. Он бредёт туда. Проход свободен." }) },
+      { t: "Пробегаю мимо на скорости", v: "bad", tip: "Бег рядом с ним — звук и движение прямо под носом.", go: () => chance(0.45) ? { end: "bitten", out: "Ты почти проскочил. Он разворачивается на звук и цепляет тебя за руку." } : { next: "gate", out: "Ты проскакиваешь. Сзади хрип и шарканье." } },
+    ],
+    kid: [
+      { t: "Издалека прошу показать руки, потом беру с собой", v: "good", tip: "Проверка обязательна для всех, даже для детей. Это не жестокость, а правило, которое спасает обоих.", go: g => { g.f.kid = true; return { next: "gate", out: "Девочка показывает ладошки. Чистые. Её зовут Аня. Она молча берёт тебя за рукав." }; } },
+      { t: "Подбегаю, обнимаю и проверяю взрослого рядом", v: "bad", tip: "Никогда не трогай лежащие тела. Сначала дистанция и наблюдение.", go: () => chance(0.5) ? { end: "bitten", out: "Ты наклоняешься к лежащему. Он резко хватает тебя за лодыжку." } : { next: "gate", out: "Взрослый мёртв по-настоящему. Ты уводишь девочку." } },
+      { t: "Прохожу мимо", v: "mid", tip: "Ты спас себя. Иногда это всё, что можно сделать.", go: () => ({ next: "gate", out: "Ты не оглядываешься." }) },
+    ],
+  }[g.meet]),
+  timeout: { v: "mid", tip: "Ты замешкался посреди улицы. Это самое опасное.", go: g => chance(g.risk || 0.3) ? { end: "bitten", out: "Пока ты стоял, сзади подошли." } : { next: "gate", out: "Ты наконец идёшь дальше." } },
+};
+S.gate = {
+  label: "Пункт", art: () => G.target.kind === "safe" ? "gate" : "gateDead", timer: 8, place: () => G.target.name, clock: "09:40",
+  enter: g => { g.target.tried = true; g.attempts++; },
+  text: g => g.target.kind === "safe"
+    ? `Блокпост. Бетонные блоки, колючая проволока. Солдат вскидывает автомат: <q>Стоять! Руки вверх! Покажи руки! Закатай рукава, повернись!</q>${g.f.kid ? " Аня прячется за тебя." : ""}`
+    : "У ворот никого. Шлагбаум сломан, на земле брошенные сумки. Внутри, за забором, фигуры медленно бредут по кругу. Тишина.",
+  ask: g => g.target.kind === "safe" ? "Дуло смотрит на тебя." : "Пункт пал. Что делаешь?",
+  choices: g => g.target.kind === "safe" ? [
+    { t: "Медленно поднимаю руки, закатываю рукава, поворачиваюсь", v: "good", tip: "На посту проверяют всех. Медленные движения, руки на виду, выполняй команды. Ты для них — потенциально заражённый.", go: () => ({ end: "saved", out: "Солдат светит фонарём на руки, шею, лодыжки. Кивает. <q>Проходи. Борт через двадцать минут.</q>" }) },
+    { t: "Бегу к нему: «Я здоров, пустите!»", v: "bad", tip: "Резкое движение к посту выглядит как атака. Сначала команды, потом слова.", go: () => chance(0.5) ? { end: "shot", out: "Очередь в воздух, вторая — под ноги. Тебя отгоняют. Ворота закрываются." } : { end: "saved", out: "Тебя валят на землю, крутят, проверяют. Обошлось, но синяки останутся." } },
+    { t: "Спорю: «Я не обязан раздеваться!»", v: "bad", tip: "Спорить на посту — потерять место. Проверка займёт минуту, а борт не ждёт.", go: g => g.points.some(p => !p.tried) ? { next: "choose", out: "<q>Следующий!</q> Тебя оттесняют. Придётся искать другой пункт." } : { end: "alone", out: "<q>Следующий!</q> Ворота закрываются. Других пунктов не осталось." } },
+  ] : [
+    { t: "Захожу — вдруг там кто-то живой", v: "bad", tip: "Признаки павшего пункта: открытые ворота, нет охраны, медленное движение внутри. Не заходи.", go: () => ({ end: "bitten", out: "Три шага за ворота. Фигуры поворачиваются разом." }) },
+    { t: "Тихо ухожу к следующему пункту", v: "good", tip: "Всегда держи запасной вариант. Ушёл тихо — ещё жив.", go: g => g.points.some(p => !p.tried) ? { next: "choose", out: "Ты пятишься и уходишь за угол." } : { end: "alone", out: "Ты уходишь. Но больше идти некуда." } },
+  ],
+  timeout: { v: "bad", tip: "Замереть у поста без поднятых рук — опасно.", go: g => g.target.kind === "safe" ? { end: "shot", out: "<q>Руки!</q> Предупредительный в воздух. Тебя прогоняют." } : (g.points.some(p => !p.tried) ? { next: "choose", out: "Одна из фигур поворачивается к тебе. Ты бежишь." } : { end: "alone", out: "Ты бежишь. Больше идти некуда." }) },
+};
+
+// ---------- endings ----------
+const END = {
+  bitten: { h: "Контакт. Ты заражён.", tone: "bad", art: "bitten", text: "Одно касание — и всё. Здесь нельзя драться и нельзя рисковать прикосновением." },
+  smoke:  { h: "Дым оказался быстрее", tone: "bad", art: "smoke", text: "При пожаре ниже тебя безопаснее остаться в квартире и закрыть щели мокрой тканью." },
+  co:     { h: "Тихая смерть в гараже", tone: "bad", art: "garage", text: "Угарный газ от двигателя в закрытом гараже. Без запаха, без цвета, без шанса. Никогда так не делай." },
+  poison: { h: "Отравление антифризом", tone: "bad", art: "garage", text: "Техническая жидкость из машины — не вода. Ищи воду в бачке унитаза, бойлере, бутылках." },
+  thirst: { h: "Обезвоживание", tone: "bad", art: "dawn", text: "Без воды человек держится около трёх дней. Воду ищут первой, раньше еды." },
+  shot:   { h: "Ворота закрылись", tone: "bad", art: "gate", text: "Пост не рискует. Резкие движения и неподчинение — и тебя не пустят." },
+  alone:  { h: "Один в Симферополе", tone: "mid", art: "roof", text: "Ты жив и не заражён, но последний борт улетел без тебя. Впереди долгие недели в пустом городе." },
+  saved:  { h: "Ты эвакуирован", tone: "good", art: "heli", text: "Вертолёт поднимается над Симферополем. Внизу — Салгир, Москольцо, крыши спальников. Колонна уходит на Севастополь." },
+};
+
+// ---------- art ----------
+const cv = $("art"), cx = cv.getContext("2d");
+let artKind = "menu", artT0 = performance.now();
+const dpr = () => Math.min(2, devicePixelRatio || 1);
+function sizeArt() { const r = cv.getBoundingClientRect(), d = dpr(); cv.width = Math.max(1, r.width * d); cv.height = Math.max(1, r.height * d); cx.setTransform(d, 0, 0, d, 0, 0); }
+addEventListener("resize", sizeArt);
+const rects = (w, h, list) => list.forEach(([c, x, y, ww, hh]) => { cx.fillStyle = c; cx.fillRect(x * w, y * h, ww * w, hh * h); });
+function skyline(w, h, base, col, seed) {
+  cx.fillStyle = col; let x = 0, s = seed;
+  while (x < w) { s = (s * 9301 + 49297) % 233280; const bw = 30 + (s / 233280) * 60, bh = 40 + ((s * 7) % 233280) / 233280 * h * 0.45; cx.fillRect(x, base - bh, bw, bh + 2); x += bw + 4; }
+}
+function mountains(w, h, base, col) { cx.fillStyle = col; cx.beginPath(); cx.moveTo(0, base); for (let i = 0; i <= 10; i++) cx.lineTo(i * w / 10, base - h * (0.08 + 0.1 * Math.abs(Math.sin(i * 1.7)))); cx.lineTo(w, base); cx.fill(); }
+function figure(x, y, col, s = 1) { cx.fillStyle = col; cx.fillRect(x, y, 7 * s, 22 * s); cx.beginPath(); cx.arc(x + 3.5 * s, y - 2 * s, 5 * s, 0, 7); cx.fill(); }
+function storefront(w, h, t, sign, signCol, inner) {
+  cx.fillStyle = "#101318"; cx.fillRect(0, 0, w, h);
+  cx.fillStyle = "#2a2e36"; cx.fillRect(w * 0.08, h * 0.12, w * 0.84, h * 0.78);
+  cx.fillStyle = "#0d1a24"; cx.fillRect(w * 0.12, h * 0.3, w * 0.5, h * 0.55);
+  cx.fillStyle = "#0b141c"; cx.fillRect(w * 0.66, h * 0.3, w * 0.22, h * 0.6);
+  if (inner) inner();
+  const shut = G && G.f.shutter;
+  if (shut) { cx.fillStyle = "#4b4f57"; cx.fillRect(w * 0.12, h * 0.3, w * 0.76, h * 0.6); cx.strokeStyle = "rgba(0,0,0,.35)"; for (let y = h * 0.32; y < h * 0.9; y += 6) { cx.beginPath(); cx.moveTo(w * 0.12, y); cx.lineTo(w * 0.88, y); cx.stroke(); } }
+  const on = !(G && G.f.dark) && (Math.sin(t * 13) > -0.8);
+  cx.font = `bold ${Math.round(h * 0.11)}px 'Russo One', sans-serif`; cx.textAlign = "center";
+  cx.fillStyle = on ? signCol : "#3a3f48"; if (on) { cx.shadowColor = signCol; cx.shadowBlur = 18; }
+  cx.fillText(sign, w * 0.5, h * 0.25); cx.shadowBlur = 0; cx.textAlign = "left";
+}
+function drawArt(now) {
+  requestAnimationFrame(drawArt);
+  const d = dpr(), w = cv.width / d, h = cv.height / d, t = (now - artT0) / 1000;
+  cx.clearRect(0, 0, w, h);
+  const k = artKind;
+  if (k === "tv") {
+    cx.fillStyle = "#0b0e14"; cx.fillRect(0, 0, w, h);
+    const tw = w * 0.62, th = h * 0.62, x = (w - tw) / 2, y = h * 0.14;
+    cx.fillStyle = "#1b1f27"; cx.fillRect(x - 10, y - 10, tw + 20, th + 20);
+    cx.fillStyle = "#24303e"; cx.fillRect(x, y, tw, th);
+    for (let i = 0; i < 40; i++) { cx.fillStyle = `rgba(255,255,255,${Math.random() * 0.08})`; cx.fillRect(x, y + Math.random() * th, tw, 2); }
+    cx.fillStyle = "#e5483b"; cx.fillRect(x, y + th - 30, tw, 22);
+    cx.fillStyle = "#fff"; cx.font = "bold 12px 'PT Sans', sans-serif";
+    const line = "СРОЧНО · СИМФЕРОПОЛЬ · НАПАДЕНИЯ НА ЛЮДЕЙ · НЕ ВЫХОДИТЕ ИЗ ДОМА · ";
+    cx.save(); cx.beginPath(); cx.rect(x, y + th - 30, tw, 22); cx.clip(); cx.fillText(line + line, x + 8 - (t * 40) % cx.measureText(line).width, y + th - 15); cx.restore();
+    cx.fillStyle = "#3a4656"; cx.beginPath(); cx.arc(x + tw / 2, y + th * 0.42, th * 0.16, 0, 7); cx.fill(); cx.fillRect(x + tw / 2 - th * 0.22, y + th * 0.58, th * 0.44, th * 0.2);
+    if (Math.sin(t * 7) > 0.85) { cx.fillStyle = "rgba(255,255,255,.12)"; cx.fillRect(x, y, tw, th); }
+  } else if (k === "flat") {
+    cx.fillStyle = "#14171e"; cx.fillRect(0, 0, w, h);
+    rects(w, h, [["#1c2029", 0, 0.7, 1, 0.3], ["#2a2f3b", 0.08, 0.18, 0.3, 0.5], ["#0f1a26", 0.11, 0.22, 0.24, 0.42], ["#3a3f4c", 0.6, 0.35, 0.3, 0.38], ["#4a505e", 0.62, 0.3, 0.26, 0.06]]);
+    cx.fillStyle = "#305878"; cx.fillRect(w * 0.64, h * 0.5, w * 0.22, h * 0.12);
+    for (let i = 0; i < 6; i++) { cx.fillStyle = "rgba(120,170,220,.55)"; cx.beginPath(); cx.arc(w * (0.66 + i * 0.035), h * 0.5 - ((t * 30 + i * 9) % 18), 2, 0, 7); cx.fill(); }
+    cx.save(); cx.beginPath(); cx.rect(w * 0.11, h * 0.22, w * 0.24, h * 0.42); cx.clip(); skyline(w * 0.4, h, h * 0.64, "#0a1018", 7); cx.restore();
+  } else if (k === "window") {
+    cx.fillStyle = "#101318"; cx.fillRect(0, 0, w, h);
+    cx.fillStyle = "#1d2836"; cx.fillRect(w * 0.15, h * 0.1, w * 0.7, h * 0.8);
+    cx.fillStyle = "#0b1118"; cx.fillRect(w * 0.18, h * 0.14, w * 0.64, h * 0.72);
+    figure(w * 0.3 + Math.sin(t * 0.7) * 5, h * 0.55, "#1f281c", 1.2); figure(w * 0.62 + Math.sin(t * 0.6 + 2) * 5, h * 0.52, "#1f281c", 1.1);
+    const hit = Math.sin(t * 8) > 0.3 ? 4 : 0;
+    cx.fillStyle = "#3a332b"; cx.beginPath(); cx.arc(w * 0.5, h * 0.42 + hit, h * 0.14, 0, 7); cx.fill(); cx.fillRect(w * 0.5 - h * 0.18, h * 0.55 + hit, h * 0.36, h * 0.4);
+    cx.fillStyle = "#c9a888"; cx.fillRect(w * 0.42, h * 0.3 + hit, 14, 26); cx.fillRect(w * 0.56, h * 0.3 + hit, 14, 26);
+    cx.fillStyle = "#2a2f3b"; cx.fillRect(w * 0.495, h * 0.1, w * 0.01, h * 0.8);
+    if (G && G.f.windows1) { cx.fillStyle = "rgba(60,48,36,.92)"; cx.fillRect(w * 0.15, h * 0.1, w * 0.52, h * 0.8); }
+  } else if (k === "door" || k === "night") {
+    const night = k === "night";
+    cx.fillStyle = night ? "#07080b" : "#15181f"; cx.fillRect(0, 0, w, h);
+    const dw = w * 0.3, dh = h * 0.86, x = (w - dw) / 2, y = h * 0.1;
+    cx.fillStyle = night ? "#191510" : "#3b2f24"; cx.fillRect(x, y, dw, dh);
+    cx.strokeStyle = "rgba(0,0,0,.4)"; cx.lineWidth = 3; cx.strokeRect(x + 10, y + 10, dw - 20, dh - 20);
+    cx.fillStyle = "#b9a680"; cx.beginPath(); cx.arc(x + dw - 22, y + dh * 0.55, 6, 0, 7); cx.fill();
+    cx.fillStyle = "#0b0b0b"; cx.beginPath(); cx.arc(x + dw / 2, y + dh * 0.28, 5, 0, 7); cx.fill();
+    cx.fillStyle = `rgba(255,220,160,${night ? 0.04 : 0.18})`; cx.fillRect(x, y + dh - 3, dw, 3);
+    if (!night && Math.sin(t * 9) > 0.4) { cx.strokeStyle = "rgba(255,255,255,.35)"; cx.lineWidth = 2; for (let i = 0; i < 3; i++) { cx.beginPath(); cx.arc(x + dw / 2, y + dh * 0.45, 30 + i * 14, -0.6, 0.6); cx.stroke(); cx.beginPath(); cx.arc(x + dw / 2, y + dh * 0.45, 30 + i * 14, Math.PI - 0.6, Math.PI + 0.6); cx.stroke(); } }
+    if (night) {
+      cx.strokeStyle = `rgba(229,72,59,${0.3 + 0.3 * Math.sin(t * 5)})`; cx.lineWidth = 2;
+      for (let i = 0; i < 4; i++) { const yy = y + dh * (0.5 + i * 0.05) + Math.sin(t * 3 + i) * 3; cx.beginPath(); cx.moveTo(x + 20, yy); cx.lineTo(x + dw - 20, yy + 6); cx.stroke(); }
+      if (G && G.f.door) { cx.fillStyle = "#2a241d"; cx.fillRect(x + dw - 8, y + dh * 0.2, dw * 0.55, dh * 0.8); }
+    }
+  } else if (k === "peephole") {
+    cx.fillStyle = "#000"; cx.fillRect(0, 0, w, h);
+    const r = Math.min(w, h) * 0.42, X = w / 2, Y = h / 2;
+    const g = cx.createRadialGradient(X, Y, r * 0.1, X, Y, r); g.addColorStop(0, "#5a5340"); g.addColorStop(1, "#141210");
+    cx.fillStyle = g; cx.beginPath(); cx.arc(X, Y, r, 0, 7); cx.fill();
+    cx.save(); cx.beginPath(); cx.arc(X, Y, r, 0, 7); cx.clip();
+    cx.fillStyle = "#2a2620"; cx.beginPath(); cx.ellipse(X, Y + r * 0.9, r * 0.7, r * 0.6, 0, 0, 7); cx.fill();
+    cx.fillStyle = "#3b342b"; cx.beginPath(); cx.arc(X, Y - r * 0.05, r * 0.28, 0, 7); cx.fill();
+    const lift = Math.min(1, t / 1.5);
+    cx.fillStyle = "#c9a888"; cx.fillRect(X - r * 0.55, Y + r * (0.7 - lift * 0.6), r * 0.22, r * 0.45); cx.fillRect(X + r * 0.33, Y + r * (0.7 - lift * 0.6), r * 0.22, r * 0.45);
+    if (G && G.guestBitten) { cx.fillStyle = "#e8e2d6"; cx.fillRect(X + r * 0.33, Y + r * (0.95 - lift * 0.6), r * 0.22, r * 0.1); cx.fillStyle = "#8a1d16"; cx.beginPath(); cx.arc(X + r * 0.44, Y + r * (1.0 - lift * 0.6), r * 0.04, 0, 7); cx.fill(); }
+    cx.restore();
+    cx.strokeStyle = "#000"; cx.lineWidth = r * 0.12; cx.beginPath(); cx.arc(X, Y, r, 0, 7); cx.stroke();
+  } else if (k === "vape") {
+    storefront(w, h, t, "VAPE", "#b05cff", () => { for (let i = 0; i < 5; i++) { cx.fillStyle = ["#7a3cff", "#20c9c9", "#ff4fa0", "#ffd24f", "#5cff8a"][i]; cx.fillRect(w * (0.15 + i * 0.09), h * 0.45, w * 0.05, h * 0.12); } cx.fillStyle = "#6fa8c9"; cx.fillRect(w * 0.7, h * 0.55, w * 0.07, h * 0.3); cx.fillStyle = "#cfe6f5"; cx.fillRect(w * 0.705, h * 0.5, w * 0.06, h * 0.07); });
+  } else if (k === "pharm") {
+    storefront(w, h, t, "АПТЕКА", "#3fe07a", () => { cx.fillStyle = "#3fe07a"; cx.fillRect(w * 0.33, h * 0.45, w * 0.08, h * 0.24); cx.fillRect(w * 0.28, h * 0.53, w * 0.18, h * 0.08); });
+  } else if (k === "store") {
+    storefront(w, h, t, "ПРОДУКТЫ", "#ffb347", () => { for (let r = 0; r < 3; r++) for (let i = 0; i < 6; i++) { cx.fillStyle = ["#a84", "#c55", "#58a", "#8a5"][(r + i) % 4]; cx.fillRect(w * (0.14 + i * 0.075), h * (0.38 + r * 0.14), w * 0.05, h * 0.08); } for (let i = 0; i < 4; i++) figure(w * (0.2 + i * 0.1) + Math.sin(t * 4 + i) * 6, h * 0.62, "#151a22", 1); });
+  } else if (k === "garage") {
+    cx.fillStyle = "#14161b"; cx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 4; i++) { const x = w * (0.02 + i * 0.245); cx.fillStyle = "#3a3d42"; cx.fillRect(x, h * 0.2, w * 0.23, h * 0.7); cx.fillStyle = i === 1 ? "#5b4a30" : "#4c5058"; cx.fillRect(x + 6, h * 0.32, w * 0.23 - 12, h * 0.58); cx.fillStyle = "#e8e2d6"; cx.font = "11px 'PT Mono', monospace"; cx.fillText(String(110 + i), x + 8, h * 0.29); }
+    const lit = !(G && G.f.dark); if (lit) { cx.fillStyle = "rgba(255,200,120,.35)"; cx.fillRect(w * 0.247 + 6, h * 0.88, w * 0.23 - 12, 3); }
+    cx.fillStyle = "#1d2129"; cx.fillRect(0, h * 0.9, w, h * 0.1);
+  } else if (k === "smoke") {
+    cx.fillStyle = "#130f0c"; cx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 9; i++) { const y = h - ((t * 26 + i * 40) % (h + 80)); const X = w * (0.2 + (i % 4) * 0.2); const g = cx.createRadialGradient(X, y, 5, X, y, 90); g.addColorStop(0, "rgba(120,110,100,.35)"); g.addColorStop(1, "rgba(120,110,100,0)"); cx.fillStyle = g; cx.fillRect(0, 0, w, h); }
+    const g2 = cx.createLinearGradient(0, h, 0, h * 0.4); g2.addColorStop(0, `rgba(240,110,40,${0.35 + 0.1 * Math.sin(t * 6)})`); g2.addColorStop(1, "rgba(240,110,40,0)"); cx.fillStyle = g2; cx.fillRect(0, 0, w, h);
+    cx.strokeStyle = "rgba(255,255,255,.2)"; cx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) { cx.beginPath(); cx.moveTo(w * 0.1 + i * w * 0.08, h * (0.95 - i * 0.12)); cx.lineTo(w * 0.18 + i * w * 0.08, h * (0.95 - i * 0.12)); cx.stroke(); }
+    cx.fillStyle = "rgba(236,232,222,.7)"; cx.font = "12px 'PT Mono', monospace"; cx.fillText("9", w * 0.86, h * 0.15); cx.fillText("5", w * 0.86, h * 0.85);
+  } else if (k === "radio") {
+    cx.fillStyle = "#1a1714"; cx.fillRect(0, 0, w, h);
+    const x = w * 0.2, y = h * 0.3, rw = w * 0.6, rh = h * 0.5;
+    cx.fillStyle = "#3d3229"; cx.fillRect(x, y, rw, rh);
+    cx.fillStyle = "#211b16"; cx.fillRect(x + 12, y + 12, rw * 0.45, rh - 24);
+    cx.fillStyle = "#c9b98f"; cx.fillRect(x + rw * 0.55, y + 16, rw * 0.38, 18);
+    cx.fillStyle = "#e5483b"; cx.fillRect(x + rw * 0.55 + (rw * 0.36) * (0.5 + 0.08 * Math.sin(t * 2)), y + 14, 2, 22);
+    cx.strokeStyle = "#7c6b52"; cx.lineWidth = 3; cx.beginPath(); cx.moveTo(x + rw - 20, y); cx.lineTo(x + rw + 30, y - h * 0.25); cx.stroke();
+    cx.strokeStyle = "rgba(241,176,63,.6)"; cx.lineWidth = 1.5;
+    cx.beginPath(); for (let i = 0; i < 60; i++) { const xx = x + rw * 0.55 + i * (rw * 0.38 / 60); cx.lineTo(xx, y + rh * 0.65 + Math.sin(i * 0.9 + t * 12) * Math.random() * 10); } cx.stroke();
+  } else if (k === "roof" || k === "street" || k === "dawn") {
+    const sky = cx.createLinearGradient(0, 0, 0, h);
+    if (k === "dawn") { sky.addColorStop(0, "#2b3a55"); sky.addColorStop(1, "#c98a5a"); } else { sky.addColorStop(0, "#28313f"); sky.addColorStop(1, "#5a4a3c"); }
+    cx.fillStyle = sky; cx.fillRect(0, 0, w, h);
+    mountains(w, h, h * 0.62, "#2a2f3c");
+    skyline(w, h, h * (k === "roof" ? 0.82 : 0.66), "#121620", 3);
+    if (k === "roof") { for (let i = 0; i < 3; i++) { const sx = w * (0.2 + i * 0.3); for (let j = 0; j < 5; j++) { cx.fillStyle = `rgba(30,30,30,${0.35 - j * 0.05})`; cx.beginPath(); cx.arc(sx + Math.sin(t + j) * 8 + j * 6, h * 0.6 - j * 22 - (t * 8 % 20), 14 + j * 5, 0, 7); cx.fill(); } }
+      cx.fillStyle = "#0b0d12"; cx.fillRect(0, h * 0.82, w, h * 0.18); }
+    else { cx.fillStyle = "#1a1d24"; cx.fillRect(0, h * 0.66, w, h * 0.34); cx.fillStyle = "#3a3f4c"; cx.fillRect(w * 0.15, h * 0.72, w * 0.18, h * 0.1);
+      cx.save(); cx.translate(w * 0.62, h * 0.8); cx.rotate(0.3); cx.fillStyle = "#c7b04a"; cx.fillRect(-w * 0.1, -h * 0.05, w * 0.2, h * 0.1); cx.restore();
+      if (k === "street") for (let i = 0; i < 3; i++) figure(w * (0.4 + i * 0.18) + Math.sin(t * 0.8 + i) * 6, h * 0.66, "#283023", 1); }
+  } else if (k === "gate" || k === "gateDead" || k === "heli") {
+    const dead = k === "gateDead";
+    cx.fillStyle = dead ? "#16110f" : "#121820"; cx.fillRect(0, 0, w, h);
+    mountains(w, h, h * 0.5, "#1a1f2a");
+    skyline(w, h, h * 0.55, "#0b0f15", 11);
+    cx.fillStyle = "#2a2d33"; cx.fillRect(0, h * 0.55, w, h * 0.45);
+    for (let i = 0; i < 5; i++) { cx.fillStyle = "#6a6a66"; cx.fillRect(w * (0.05 + i * 0.2), h * 0.62, w * 0.12, h * 0.12); }
+    cx.strokeStyle = "rgba(200,200,200,.35)"; cx.lineWidth = 1; for (let i = 0; i < 30; i++) { cx.beginPath(); cx.arc(i * w / 30, h * 0.6, 5, 0, Math.PI); cx.stroke(); }
+    if (k === "heli") { const hx = w * 0.5 + Math.sin(t * 0.6) * 20, hy = h * 0.3 - Math.min(t * 6, h * 0.2); cx.fillStyle = "#0c0f14"; cx.beginPath(); cx.ellipse(hx, hy, 34, 12, 0, 0, 7); cx.fill(); cx.fillRect(hx + 20, hy - 3, 40, 5); cx.strokeStyle = "#0c0f14"; cx.lineWidth = 3; cx.beginPath(); const a = t * 30; cx.moveTo(hx - Math.cos(a) * 60, hy - 16); cx.lineTo(hx + Math.cos(a) * 60, hy - 16); cx.stroke(); }
+    if (!dead) { const g = cx.createRadialGradient(w * 0.8, h * 0.3, 2, w * 0.8, h * 0.3, w * 0.5); g.addColorStop(0, "rgba(255,250,220,.25)"); g.addColorStop(1, "rgba(255,250,220,0)"); cx.fillStyle = g; cx.fillRect(0, 0, w, h); figure(w * 0.47, h * 0.66, "#3d4a2c", 1.2); }
+    else { for (let i = 0; i < 4; i++) figure(w * (0.3 + i * 0.14) + Math.sin(t * 0.5 + i * 2) * 14, h * 0.5, "#2c3324", 1);
+      const g = cx.createLinearGradient(0, h, 0, h * 0.4); g.addColorStop(0, `rgba(240,110,40,${0.25 + 0.08 * Math.sin(t * 7)})`); g.addColorStop(1, "rgba(240,110,40,0)"); cx.fillStyle = g; cx.fillRect(w * 0.7, 0, w * 0.3, h); }
+  } else if (k === "bitten") {
+    cx.fillStyle = "#1a0606"; cx.fillRect(0, 0, w, h);
+    const p = 0.5 + 0.5 * Math.sin(t * 2.4);
+    const g = cx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w * 0.7); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, `rgba(150,10,10,${0.4 + p * 0.3})`); cx.fillStyle = g; cx.fillRect(0, 0, w, h);
+    cx.fillStyle = "#c9a888"; cx.fillRect(w * 0.2, h * 0.45, w * 0.6, h * 0.16);
+    cx.fillStyle = "#7e1912"; for (let i = 0; i < 7; i++) { cx.beginPath(); cx.arc(w * (0.42 + i * 0.025), h * 0.5 + (i % 2) * 8, 3, 0, 7); cx.fill(); }
+  } else {
+    // menu: Simferopol at night, Crimean mountains behind
+    cx.fillStyle = "#0b0d12"; cx.fillRect(0, 0, w, h);
+    mountains(w, h, h * 0.7, "#151a24");
+    skyline(w, h, h * 0.88, "#10141c", 5);
+    for (let i = 0; i < 46; i++) { const s = (i * 9301 + 49297) % 233280 / 233280; if (Math.sin(t * 0.7 + i) > 0.1) { cx.fillStyle = "rgba(241,176,63,.55)"; cx.fillRect(s * w, h * 0.62 + ((i * 37) % 40), 3, 4); } }
+    cx.fillStyle = "rgba(229,72,59,.85)"; cx.beginPath(); cx.arc(w * 0.62, h * 0.72, 3 + Math.sin(t * 4) * 1.5, 0, 7); cx.fill();
+    cx.fillStyle = "rgba(236,232,222,.55)"; cx.font = "10px 'PT Mono', monospace"; cx.fillText("МОСКОЛЬЦО", w * 0.62 + 8, h * 0.72 + 3);
+  }
+}
+
+// ---------- engine ----------
+let cur = null, timerId = null, deadline = 0, selected = [];
+function setArt(k) { if (k !== artKind) { artKind = k; artT0 = performance.now(); } }
+function val(x) { return typeof x === "function" ? x(G) : x; }
+function stageOf(id) {
+  const L = G.flow.length, i = G.flow.indexOf(id);
+  if (i >= 0) return i;
+  return { choose: G.flow.indexOf("radio"), route: L, meet: L + 1, gate: L + 2 }[id] ?? G.fi;
+}
+function renderTop(stage, total, place, clock, label) {
+  $("stories").innerHTML = total ? Array.from({ length: total }, (_, i) => `<i class="${i < stage ? "done" : i === stage ? "now" : ""}"></i>`).join("") : "";
+  $("place").textContent = place; $("clock").textContent = clock;
+  $("tag").textContent = label ? `Симферополь · ${label}` : "Симферополь · Крым";
+  renderRes();
+}
+function renderRes() {
+  if (!G) { $("res").innerHTML = ""; return; }
+  clampRes();
+  $("res").innerHTML = `<span class="${G.water < 5 ? "low" : ""}">вода <b>${G.water} л</b></span><span class="${G.food <= 0 ? "low" : ""}">еда <b>${G.food > 0 ? G.food + " дн" : "нет"}</b></span><span class="${G.charge < 15 ? "low" : ""}">заряд <b>${G.charge}%</b></span><span class="${G.stress > 70 ? "low" : ""}">стресс <b>${G.stress}</b></span>${G.withGuest ? `<span>с тобой <b>${G.guestName}</b></span>` : ""}${G.f.kid ? "<span>с тобой <b>Аня</b></span>" : ""}${G.f.car ? "<span><b>машина</b></span>" : ""}`;
+}
+function storyProgress(p) { const now = document.querySelector(".stories i.now"); if (now) now.style.setProperty("--p", (p * 100).toFixed(1) + "%"); }
+
+function show(id) {
+  clearInterval(timerId);
+  if (id === NEXT) id = G.flow[G.fi + 1] || "radio";
+  const fidx = G.flow.indexOf(id); if (fidx >= 0) G.fi = fidx;
+  const sc = S[id];
+  if (sc.skip && sc.skip(G)) { show(NEXT); return; }
+  cur = sc; selected = [];
+  if (sc.enter) sc.enter(G);
+  renderTop(stageOf(id), G.flow.length + 3, val(sc.place), sc.clock, sc.label);
+  setArt(val(sc.art));
+  const choices = val(sc.choices).map(c => Object.assign({}, c, { t: val(c.t) }));
+  sc._choices = choices;
+  const b = $("body");
+  b.innerHTML = `<p class="caption">${val(sc.text)}</p>
+    <p class="ask">${val(sc.ask)}${sc.multi ? ` <span id="cnt">(0/${sc.multi})</span>` : ""}</p>
+    ${sc.timer ? `<div class="timer-l"><span>${sc.multi ? "время на сборы" : "на решение"}</span><b id="tl">${sc.timer}</b></div><div class="timer"><i id="tb"></i></div>` : ""}
+    <div class="choices">${choices.map((c, i) => `<button class="choice" type="button" data-i="${i}"><span class="k">${i + 1}</span><span>${esc(c.t)}</span></button>`).join("")}</div>
+    ${sc.multi ? `<button class="btn" id="done" type="button" disabled>Готово</button>` : ""}`;
+  b.classList.remove("fade", "shake"); void b.offsetWidth; b.classList.add("fade"); b.scrollTop = 0;
+  b.querySelectorAll(".choice").forEach(el => el.onclick = () => choose(+el.dataset.i));
+  if (sc.multi) $("done").onclick = () => submitMulti(false);
+  if (sc.timer) {
+    deadline = performance.now() + sc.timer * 1000;
+    timerId = setInterval(() => {
+      const left = Math.max(0, deadline - performance.now()), k = left / (sc.timer * 1000);
+      const tb = $("tb"); if (tb) tb.style.transform = `scaleX(${k})`;
+      const tl = $("tl"); if (tl) tl.textContent = Math.ceil(left / 1000);
+      storyProgress(1 - k);
+      if (left <= 0) { clearInterval(timerId); sc.multi ? submitMulti(true) : resolve(sc.timeout, true); }
+    }, 50);
+  } else storyProgress(0.5);
+}
+function choose(i) {
+  const sc = cur;
+  if (sc.multi) {
+    const at = selected.indexOf(i);
+    if (at >= 0) selected.splice(at, 1); else if (selected.length < sc.multi) selected.push(i);
+    document.querySelectorAll(".choice").forEach(el => { const s = selected.includes(+el.dataset.i); el.classList.toggle("sel", s); el.disabled = !s && selected.length >= sc.multi; });
+    $("cnt").textContent = `(${selected.length}/${sc.multi})`;
+    $("done").disabled = selected.length === 0;
+    return;
+  }
+  resolve(sc._choices[i], false);
+}
+function tally(v, t) { G.log.push({ v, t }); if (v === "good") G.good++; else if (v === "bad") G.bad++; }
+function submitMulti(timedOut) {
+  clearInterval(timerId);
+  const sc = cur;
+  let picked = selected.map(i => sc._choices[i]);
+  if (!picked.length) { sc.timeout.go(G); tally(sc.timeout.v, "Не успел собраться"); }
+  picked.forEach(c => { c.go(G); tally(c.v, c.t); });
+  const r = (sc.after && sc.after(G)) || { next: NEXT };
+  const goods = picked.filter(c => c.v === "good").length;
+  const tone = !picked.length ? "mid" : goods === picked.length && picked.length === sc.multi ? "good" : goods === 0 ? "bad" : "mid";
+  renderRes();
+  const tips = picked.length ? picked.map(c => ({ v: c.v, tip: c.tip, t: c.t })) : [{ v: "mid", tip: sc.timeout.tip }];
+  verdict(tone, r.out || (timedOut ? (picked.length ? "Время вышло. Ты успел вот это:" : "Ты метался и успел только закрыть дверь.") : "Сделано."), tips, r);
+}
+function resolve(c, timedOut) {
+  clearInterval(timerId);
+  const r = c.go(G) || {};
+  if (!c.noVerdict) tally(c.v, timedOut ? "Не успел решить" : c.t);
+  renderRes();
+  if (c.noVerdict && r.next) { show(r.next); return; }
+  verdict(c.v, (timedOut ? "Время вышло. " : "") + (r.out || ""), c.tip ? [{ v: c.v, tip: c.tip }] : [], r);
+}
+const STAMP = { good: "Верно", bad: "Ошибка", mid: "Спорно" };
+function verdict(tone, out, tips, r) {
+  const b = $("body");
+  const dead = !!r.end && END[r.end].tone === "bad";
+  b.innerHTML = `<div class="verdict">
+      <span class="stamp ${tone}">${STAMP[tone]}</span>
+      ${out ? `<p class="outcome">${out}</p>` : ""}
+      ${tips.map(x => `<div class="why ${x.v}"><b>${x.t ? esc(x.t) : "почему так"}</b>${x.tip}</div>`).join("")}
+      <button class="btn ${dead ? "red" : ""}" id="next" type="button">${r.end ? "Чем всё кончилось" : "Дальше"}</button>
+    </div>`;
+  b.classList.remove("fade", "shake"); void b.offsetWidth; b.classList.add(tone === "bad" ? "shake" : "fade"); b.scrollTop = 0;
+  if (r.end === "bitten") setArt("bitten");
+  storyProgress(1);
+  const n = $("next"); n.onclick = () => r.end ? ending(r.end) : show(r.next || NEXT); n.focus({ preventScroll: true });
+}
+function ending(id) {
+  const e = END[id];
+  setArt(e.art);
+  renderTop(0, 0, "Итог · " + G.loc.name, "день 1", "итог");
+  const total = G.log.length;
+  const surv = Math.round(100 * G.good / Math.max(1, total));
+  $("body").innerHTML = `<div class="verdict">
+      <span class="stamp ${e.tone}">${e.tone === "good" ? "Выжил" : e.tone === "mid" ? "Жив" : "Конец"}</span>
+      <h2 class="end-h">${e.h}</h2>
+      <p class="outcome">${e.text}</p>
+      <div class="score"><div><span>верных</span><strong>${G.good}</strong></div><div><span>ошибок</span><strong>${G.bad}</strong></div><div><span>чутьё</span><strong>${surv}%</strong></div></div>
+      <p class="eyebrow" style="margin:6px 0 0">Старт: ${esc(G.loc.name)} · твои решения</p>
+      <ul class="recap">${G.log.map(l => `<li class="${l.v}">${esc(l.t)}</li>`).join("")}</ul>
+      <button class="btn" id="again" type="button">Начать из другого места</button>
+      <button class="btn red" id="retry" type="button">Ещё раз отсюда</button>
+    </div>`;
+  const loc = G.locId;
+  $("again").onclick = menu; $("retry").onclick = () => startRun(loc); $("retry").focus({ preventScroll: true });
+}
+function menu() {
+  G = null; clearInterval(timerId); renderTop(0, 0, "ZombiCraumia", "день 1", ""); setArt("menu");
+  const ids = Object.keys(LOCS);
+  $("body").innerHTML = `<div class="verdict">
+      <span class="eyebrow">Крым · Симферополь · первый день</span>
+      <h1 class="title-h">Zombi<span>Craumia</span></h1>
+      <p class="caption">Ты обычный человек: без оружия и без опыта. Апокалипсис начинается прямо сейчас, и на каждое решение у тебя есть секунды.</p>
+      <ul class="rules">
+        <li><b>01</b>Любое касание заражённого — это укус. Конец игры.</li>
+        <li><b>02</b>Не успел решить — значит застыл. У ступора тоже есть последствия.</li>
+        <li><b>03</b>Часть пунктов эвакуации уже пала. Сначала разведай.</li>
+        <li><b>04</b>После каждого выбора — объяснение, почему так. Это работает и в реальных ЧС.</li>
+      </ul>
+      <p class="eyebrow" style="margin:4px 0 0">Где тебя застало?</p>
+      <div class="locs">${ids.map(id => { const L = LOCS[id]; return `<button class="loc" type="button" data-loc="${id}"><b>${esc(L.name)}</b><small>${esc(L.sum)}</small><em>${esc(L.res)}</em></button>`; }).join("")}
+        <button class="loc rnd" type="button" data-loc="random"><b>Случайное место</b><small>Как в жизни: не выбираешь, где тебя застанет.</small></button></div>
+      <span class="note">Клавиши 1–7 выбирают ответ, Enter — дальше</span>
+    </div>`;
+  $("body").scrollTop = 0;
+  document.querySelectorAll(".loc").forEach(el => el.onclick = () => startRun(el.dataset.loc === "random" ? pick(ids) : el.dataset.loc));
+}
+function startRun(loc) { newRun(loc); show(G.flow[0]); }
+addEventListener("keydown", e => {
+  const n = parseInt(e.key, 10);
+  if (n >= 1 && n <= 9) { const el = document.querySelector(`.choice[data-i="${n - 1}"]`); if (el && !el.disabled) el.click(); }
+  if (e.key === "Enter") { const d = $("done"); const b = $("next") || $("retry") || (d && !d.disabled ? d : null); if (b && document.activeElement !== b) { e.preventDefault(); b.click(); } }
+});
+sizeArt(); requestAnimationFrame(drawArt);
+menu();
+window.__zc = { S, LOCS, get G() { return G; }, show, startRun }; // for automated tests
+})();
+</script>
+<!--ARTIFACT-BODY-END-->
+</body>
+</html>
