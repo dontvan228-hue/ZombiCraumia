@@ -1209,7 +1209,20 @@ const Action = (() => {
       if (st.mode !== "look") return;
       st.yaw += dx * 0.006; st.pitch = Math.max(-1.25, Math.min(0.9, st.pitch + dy * 0.005));
     };
-    stage.onpointerup = stage.onpointercancel = e => {
+    stage.onpointerup = stage.onpointercancel = handleUp;
+    stage.onlostpointercapture = e => { if (e.pointerId === joy.id) resetJoy(); };
+    if (!bound) {
+      bound = true;
+      addEventListener("keydown", onKey); addEventListener("keyup", onKeyUp);
+      // a finger or key released anywhere — or never reported — must stop the walk (bubble phase: the stage handles it first)
+      addEventListener("pointerup", e => { if (st) handleUp(e); });
+      addEventListener("pointercancel", e => { if (st) handleUp(e); });
+      addEventListener("touchend", e => { if (st && e.touches.length === 0) { resetJoy(); look.id = null; } });
+      addEventListener("touchcancel", () => { if (st) { resetJoy(); look.id = null; } });
+      addEventListener("blur", releaseAll); document.addEventListener("visibilitychange", releaseAll);
+    }
+  }
+  function handleUp(e) {
       if (!st) return;
       if (e.pointerId === joy.id) { resetJoy(); return; }
       if (e.pointerId !== look.id) return;
@@ -1218,18 +1231,6 @@ const Action = (() => {
       if (st.mode === "slam" && st.charging) slamRelease();
       st.pushing = false;
       if (st.mode === "look" && !st.inspect && look.moved < 10 && performance.now() - look.t0 < 450) pickAt(e.clientX, e.clientY);
-    };
-    stage.onlostpointercapture = e => { if (e.pointerId === joy.id) resetJoy(); };
-    if (!bound) {
-      bound = true;
-      addEventListener("keydown", onKey); addEventListener("keyup", onKeyUp);
-      // a finger or key released anywhere — or never reported — must stop the walk
-      addEventListener("pointerup", e => { if (st && e.pointerId === joy.id) resetJoy(); if (st && e.pointerId === look.id) look.id = null; }, true);
-      addEventListener("pointercancel", e => { if (st && e.pointerId === joy.id) resetJoy(); }, true);
-      addEventListener("touchend", e => { if (st && e.touches.length === 0) { resetJoy(); look.id = null; } }, true);
-      addEventListener("touchcancel", () => { if (st) { resetJoy(); look.id = null; } }, true);
-      addEventListener("blur", releaseAll); document.addEventListener("visibilitychange", releaseAll);
-    }
   }
   function resetJoy() { joy.id = null; joy.dx = joy.dy = 0; const k = $("aKnob"); if (k) k.style.transform = ""; }
   function releaseAll() { keys.clear(); resetJoy(); look.id = null; if (st) { st.pushing = false; if (st.charging) st.charging = false; } }
