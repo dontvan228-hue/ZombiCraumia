@@ -124,6 +124,25 @@ body {
 .recap li { display: grid; grid-template-columns: 14px 1fr; gap: 8px; color: #cfcbc1; }
 .recap li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--muted); }
 .recap li.good::before { background: var(--ok); } .recap li.bad::before { background: var(--alarm); } .recap li.mid::before { background: var(--warn); }
+.act { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+.say { font-size: 15px; line-height: 1.4; min-height: 2.8em; }
+.say b { color: var(--warn); font-weight: 700; }
+.stage { position: relative; flex: 1 1 auto; min-height: 260px; border-radius: 8px; overflow: hidden; touch-action: none; background: #07090d; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.abtn { position: absolute; right: 12px; bottom: 12px; width: 76px; height: 76px; border-radius: 50%; border: 2px solid var(--warn); background: rgba(241,176,63,.18); color: var(--ink); font-family: var(--f-display); font-size: 15px; touch-action: none; }
+.ibtns[hidden], .abtn[hidden] { display: none; }
+.ibtns { position: absolute; left: 12px; right: 12px; bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.prompt { font-family: var(--f-mono); font-size: 13px; min-height: 1.5em; color: var(--ink); }
+.prompt b { color: var(--warn); font-weight: 400; }
+.prompt kbd { font-family: var(--f-mono); font-size: 11px; border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 4px; padding: 0 5px; background: #1a1f29; }
+.nbar { display: inline-block; width: 140px; height: 8px; background: #1e232d; border-radius: 4px; overflow: hidden; vertical-align: middle; }
+.nbar i { display: block; height: 100%; background: var(--alarm); }
+.meter { display: flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.meter b { font-weight: 400; color: var(--ink); }
+.meter .nbar i { transition: width .1s linear; }
+.obj { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: 13px; color: var(--muted); }
+.obj li::before { content: "○ "; color: var(--muted); }
+.obj li.ok { color: var(--ink); } .obj li.ok::before { content: "● "; color: var(--ok); }
 .note { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
 .fade { animation: fade .35s ease-out; }
 @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -143,7 +162,7 @@ body {
     <div class="meta"><span id="place">ZombiCraumia</span><b id="clock">—</b></div>
     <div class="res" id="res"></div>
   </div>
-  <div class="art"><canvas id="art"></canvas><span class="tag" id="tag">Симферополь</span></div>
+  <div class="art" id="artBox"><canvas id="art"></canvas><span class="tag" id="tag">Симферополь</span></div>
   <div class="body" id="body"></div>
 </main>
 
@@ -158,15 +177,18 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 
 // ---------- start locations (Симферополь) ----------
 const LOCS = {
+  home16: { name: "Дом, 16 этаж", where: "ул. Беспалова", place: "Кв. 121 · 16 этаж", sum: "Самый верх. Напор пропадёт первым, лифт встанет.", res: "еда есть · вода уйдёт за минуты",
+            water: 0, food: 3, charge: 35, kind: "home", door: "door", clock: "21:14", art: "tv", floor: 16,
+            flow: ["news", "prep", "knock", "fire", "night", "supply", "radio"] },
   home9:  { name: "Дом, 9 этаж", where: "ул. Балаклавская", place: "Кв. 47 · 9 этаж", sum: "Дома, высоко. Вода из крана, пока она есть.", res: "еда есть · воду надо набрать",
-            water: 0, food: 3, charge: 35, kind: "home", door: "door", clock: "21:14", art: "tv",
+            water: 0, food: 3, charge: 35, kind: "home", door: "door", clock: "21:14", art: "tv", floor: 9,
             flow: ["news", "prep", "knock", "fire", "night", "supply", "radio"] },
   home1:  { name: "Дом, 1 этаж", where: "ул. Жуковского", place: "Кв. 3 · 1 этаж", sum: "Окна на уровне улицы. Сюда можно просто влезть.", res: "еда есть · окна уязвимы",
-            water: 0, food: 3, charge: 40, kind: "home", door: "door", clock: "21:14", art: "tv",
+            water: 0, food: 3, charge: 40, kind: "home", door: "door", clock: "21:14", art: "tv", floor: 1,
             flow: ["news", "prep", "window1", "night", "supply", "radio"] },
-  vape:   { name: "Вейп-шоп на Москольце", where: "площадь Москольцо", place: "Вейп-шоп · Москольцо", sum: "Ты на смене. Стеклянная витрина, ролета, подсобка.", res: "вода есть (кулер) · еды нет",
-            water: 19, food: 0, charge: 70, kind: "shop", door: "glass", clock: "20:47", art: "vape", supply: "продуктовый через дорогу, у остановки на Москольце",
-            flow: ["vapeOpen", "prep", "knock", "night", "supply", "radio"] },
+  vape:   { name: "Вейп-шоп на Москольце", where: "площадь Москольцо", place: "Вейп-шоп · Москольцо", sum: "Квадрат 2×2: стеллажи, мини-холодильник, дверь и витрина. Ни подсобки, ни крана.", res: "интерактив · ролету опускать самому",
+            water: 0, food: 0, charge: 70, kind: "shop", door: "glass", clock: "20:47", art: "vape", supply: "продуктовый через дорогу, у остановки на Москольце", action: true,
+            flow: ["vapeAction", "supply", "radio"] },
   store:  { name: "Продуктовый на Киевской", where: "ул. Киевская", place: "Магазин · Киевская", sum: "Ты зашёл за хлебом. В зале человек тридцать.", res: "еда вокруг · толпа и паника",
             water: 2, food: 1, charge: 40, kind: "shop", door: "glass", clock: "20:31", art: "store",
             flow: ["storeOpen", "prep", "knock", "night", "radio"] },
@@ -210,8 +232,14 @@ S.news = {
   ask: "Первые секунды. Что делаешь?",
   choices: [
     { t: "Набираю воду везде: ванна, чайник, кастрюли, все тазики", v: "good",
-      tip: "Воду и свет в ЧС отключают одними из первых. Полная ванна — это 150–200 литров: пить, готовить, мочить тряпки при пожаре. В Симферополе вода и так по графику — кран может пересохнуть через час.",
-      go: g => { g.water = 180; return { next: NEXT, out: "Шумит вода. Ванна, чайник, три кастрюли, ведро, даже бутылки из-под лимонада. Через сорок минут напор в кране слабеет." }; } },
+      tip: g => g.loc.floor >= 9
+        ? `Воду в ЧС отключают одними из первых, а верхние этажи теряют её раньше всех: насосы встают, давления не хватает. На ${g.loc.floor}-м счёт идёт на минуты — начинай с самой большой ёмкости, с ванны.`
+        : "Воду в ЧС отключают одними из первых. На нижних этажах напор держится дольше всех, поэтому ты успеваешь набрать всё. Полная ванна — это 150–200 литров.",
+      go: g => {
+        const f = g.loc.floor || 1;
+        if (f >= 16) { g.water = 60; return { next: NEXT, out: "Напор слабеет уже через пару минут, кран кашляет воздухом. Ванна набралась на треть, плюс чайник и одна кастрюля. Это всё." }; }
+        if (f >= 9) { g.water = 110; return { next: NEXT, out: "Шумит вода. Ванна набирается наполовину, потом струя тончает до нитки. Ты успеваешь наполнить чайник, кастрюли и ведро." }; }
+        g.water = 180; return { next: NEXT, out: "На первом этаже напор держится дольше всех. Полная ванна, чайник, три кастрюли, ведро, даже бутылки из-под лимонада." }; } },
     { t: "Бегу в магазин у дома за едой", v: "bad",
       tip: "В первые часы магазины — самое людное место. Давка, паника, и среди толпы уже есть укушенные, которые сами об этом не знают. Еда дома почти всегда есть на 3–5 дней.",
       go: g => chance(0.5)
@@ -227,7 +255,7 @@ S.news = {
         : (g.stress += 20, { next: NEXT, out: "Снизу слышен крик и топот. Ты захлопываешь дверь. Ничего полезного ты не узнал." }) },
   ],
   timeout: { v: "bad", tip: "Ступор — нормальная реакция, но в ЧС первые минуты решают всё. Выучи заранее 2–3 действия «на автомате»: вода, дверь, заряд.",
-    go: g => { g.stress += 15; g.water = 20; return { next: NEXT, out: "Ты застыл перед телевизором. Когда наконец пошёл к крану, напор уже еле течёт. Успел набрать одно ведро." }; } },
+    go: g => { g.stress += 15; g.water = (g.loc.floor || 1) >= 9 ? 0 : 20; return { next: NEXT, out: (g.loc.floor || 1) >= 9 ? "Ты застыл перед телевизором. Когда добежал до крана, из него только шипит воздух. Верхние этажи остаются без воды первыми." : "Ты застыл перед телевизором. Когда добежал до крана, напор еле течёт. Успел набрать одно ведро." }; } },
 };
 
 S.window1 = {
@@ -246,25 +274,6 @@ S.window1 = {
       go: g => { g.stress += 15; return { next: NEXT, out: "Он бьёт по стеклу ещё минуту, потом крик переходит в хрип. Ты не смотришь." }; } },
   ],
   timeout: { v: "mid", tip: "Пока ты думал, всё решилось за тебя.", go: g => { g.stress += 15; return { next: NEXT, out: "Стук прекращается. За окном шарканье." }; } },
-};
-
-// --- vape shop on Moskoltso ---
-S.vapeOpen = {
-  label: "Смена", art: "vape", timer: 8, place: g => g.loc.place, clock: "20:47",
-  text: "В шоп влетает парень без куртки: <q>На Москольце людей жрут! У остановки, у троллейбусов!</q> В зале ещё двое покупателей. За стеклом по кольцу бегут люди, сигналят машины.",
-  ask: "Ты один на смене. Что делаешь?",
-  choices: [
-    { t: "Опускаю ролету и закрываю дверь, покупатели остаются внутри", v: "good", tip: "Закрыться быстро — главное. Ролета и закрытая дверь отрезают тебя от улицы. Люди внутри уже проверены: никто из них не ранен.",
-      go: g => { g.f.shutter = true; g.stress += 5; return { next: NEXT, out: "Ролета с грохотом идёт вниз. Покупатели переглядываются: никто не хочет выходить. Теперь вас четверо." }; } },
-    { t: "Выгоняю всех и закрываюсь один", v: "mid", tip: "Ты сократил риск внутри, но остался один. Вместе легче дежурить, но любой новый человек — риск.",
-      go: g => { g.f.shutter = true; g.stress += 15; return { next: NEXT, out: "Ты выпроваживаешь всех и опускаешь ролету. Снаружи кто-то пытается её поднять и уходит." }; } },
-    { t: "Выхожу на крыльцо посмотреть, что на кольце", v: "bad", tip: "Москольцо — один из самых людных узлов города: остановки, рынок, кольцо. В первые минуты там больше всего укушенных.",
-      go: g => chance(0.35) ? { end: "bitten", out: "Ты выходишь на крыльцо. Женщина, бегущая мимо, врезается в тебя и вцепляется в плечо. Она уже не бежит — она нападает." }
-        : (g.stress += 20, { next: NEXT, out: "У остановки на земле лежат люди. Двое склонились над ними. Ты влетаешь обратно и опускаешь ролету." }) },
-    { t: "Продолжаю работать — наверное, это драка", v: "bad", tip: "Нормализация — классическая ошибка: «это не со мной, это просто драка». Если люди бегут в одну сторону — беги и ты, или закрывайся.",
-      go: g => { g.stress += 10; g.f.lateShutter = true; return { next: NEXT, out: "Через пять минут в витрину врезается тело. На стекле — кровь. Ты опускаешь ролету, руки не слушаются." }; } },
-  ],
-  timeout: { v: "bad", tip: "Застыть у кассы — потерять те самые первые секунды.", go: g => { g.stress += 15; return { next: NEXT, out: "Ты смотришь в окно, пока покупатели не выбегают сами. Ролету ты опускаешь только потом." }; } },
 };
 
 // --- grocery on Kievskaya ---
@@ -369,7 +378,6 @@ const PREP = {
     { t: g.locId === "vape" ? "Выключить неоновую вывеску и свет в зале" : "Выключить свет в зале и витрине", v: "good", tip: "Светящаяся витрина ночью — маяк на всю улицу. Темнота — лучшая маскировка.", go: g => { g.f.dark = true; } },
     { t: "Подпереть стеклянную дверь стеллажом", v: "good", tip: "Стекло держит удар хуже, чем кажется. Тяжёлая мебель у двери — дополнительный барьер.", go: g => { g.f.door = true; } },
     { t: "Проверить чёрный ход и подсобку", v: "good", tip: "Всегда знай второй выход. Он же — второй вход, его тоже надо закрыть.", go: g => { g.f.backdoor = true; } },
-    ...(g.locId === "vape" ? [{ t: "Перелить воду из кулера в бутылки, чтобы взять с собой", v: "good", tip: "19-литровая бутыль не унесёшь. Вода в пол-литровых бутылках — это вода, которую можно взять в дорогу.", go: g => { g.f.bottles = true; } }] : []),
     ...(g.locId === "pharm" ? [{ t: "Собрать аптечку: бинты, антисептик, обезболивающее, регидрон", v: "good", tip: "Ты в лучшем месте города для этого. Аптечка пригодится и тебе, и как плата за помощь.", go: g => { g.f.bag = true; } }] : []),
     ...(g.locId === "store" ? [{ t: "Набить рюкзак консервами и водой со склада", v: "good", tip: "Тушёнка, крупы, вода — не скоропорт. Это неделя жизни в одном рюкзаке.", go: g => { g.f.bag = true; g.food += 3; g.water += 10; } }] : []),
     { t: "Зарядить телефон и пауэрбанки, пока есть свет", v: "good", tip: "Свет отключат. Заряд — это связь, фонарик и звонок 112.", go: g => { g.charge = 100; } },
@@ -395,7 +403,6 @@ S.prep = {
   timeout: { v: "mid", tip: "Если не успел выбрать — сделай хотя бы одно: закрой дверь. Это базовое действие.", go: g => { g.f.door = true; } },
   after: g => {
     if (g.f.co) return { end: "co", out: "Тепло, гудит мотор. Ты засыпаешь в машине. Ворота закрыты." };
-    if (g.locId === "vape" && !g.f.bottles) g.water = Math.min(g.water, 19);
     return null;
   },
 };
@@ -440,7 +447,7 @@ S.peephole = {
 // --- fire (high floor only) ---
 S.fire = {
   label: "Пожар", art: "smoke", timer: 9, place: g => g.loc.place, clock: "01:30",
-  text: g => `Запах гари. В окне подъезда — оранжевые отсветы: горит 5-й этаж. Ты на 9-м. Дым поднимается по лестнице${g.f.windows ? ", и через открытые окна он уже тянется в комнату" : ""}.`,
+  text: g => `Запах гари. В окне подъезда — оранжевые отсветы: горит ${g.loc.floor >= 16 ? "11" : "5"}-й этаж. Ты на ${g.loc.floor}-м. Дым поднимается по лестнице${g.f.windows ? ", и через открытые окна он уже тянется в комнату" : ""}.`,
   ask: "Пожар ниже тебя. Твои действия?",
   choices: [
     { t: "Бегу вниз по лестнице, пока не поздно", v: "bad", tip: "Пожар ниже — вниз не бежать. Дым поднимается быстрее человека, на лестнице ноль видимости, а внизу ещё и заражённые.", go: () => chance(0.7) ? { end: "smoke", out: "На 7-м этаже дым такой, что ты не видишь своих рук. Ты кашляешь, теряешь перила…" } : { end: "bitten", out: "Ты прорвался сквозь дым до 4-го. Там, в темноте, кто-то стоит на площадке." } },
@@ -607,6 +614,7 @@ const END = {
   co:     { h: "Тихая смерть в гараже", tone: "bad", art: "garage", text: "Угарный газ от двигателя в закрытом гараже. Без запаха, без цвета, без шанса. Никогда так не делай." },
   poison: { h: "Отравление антифризом", tone: "bad", art: "garage", text: "Техническая жидкость из машины — не вода. Ищи воду в бачке унитаза, бойлере, бутылках." },
   thirst: { h: "Обезвоживание", tone: "bad", art: "dawn", text: "Без воды человек держится около трёх дней. Воду ищут первой, раньше еды." },
+  box:    { h: "Квадрат 2×2", tone: "bad", art: "bitten", text: "Без подсобки и второго выхода тебе некуда деться от того, кто уже внутри. Проверка на входе — единственная защита." },
   shot:   { h: "Ворота закрылись", tone: "bad", art: "gate", text: "Пост не рискует. Резкие движения и неподчинение — и тебя не пустят." },
   alone:  { h: "Один в Симферополе", tone: "mid", art: "roof", text: "Ты жив и не заражён, но последний борт улетел без тебя. Впереди долгие недели в пустом городе." },
   saved:  { h: "Ты эвакуирован", tone: "good", art: "heli", text: "Вертолёт поднимается над Симферополем. Внизу — Салгир, Москольцо, крыши спальников. Колонна уходит на Севастополь." },
@@ -716,7 +724,7 @@ function drawArt(now) {
     const g2 = cx.createLinearGradient(0, h, 0, h * 0.4); g2.addColorStop(0, `rgba(240,110,40,${0.35 + 0.1 * Math.sin(t * 6)})`); g2.addColorStop(1, "rgba(240,110,40,0)"); cx.fillStyle = g2; cx.fillRect(0, 0, w, h);
     cx.strokeStyle = "rgba(255,255,255,.2)"; cx.lineWidth = 2;
     for (let i = 0; i < 6; i++) { cx.beginPath(); cx.moveTo(w * 0.1 + i * w * 0.08, h * (0.95 - i * 0.12)); cx.lineTo(w * 0.18 + i * w * 0.08, h * (0.95 - i * 0.12)); cx.stroke(); }
-    cx.fillStyle = "rgba(236,232,222,.7)"; cx.font = "12px 'PT Mono', monospace"; cx.fillText("9", w * 0.86, h * 0.15); cx.fillText("5", w * 0.86, h * 0.85);
+    cx.fillStyle = "rgba(236,232,222,.7)"; cx.font = "12px 'PT Mono', monospace"; const fl = G && G.loc.floor || 9; cx.fillText(String(fl), w * 0.86, h * 0.15); cx.fillText(fl >= 16 ? "11" : "5", w * 0.86, h * 0.85);
   } else if (k === "radio") {
     cx.fillStyle = "#1a1714"; cx.fillRect(0, 0, w, h);
     const x = w * 0.2, y = h * 0.3, rw = w * 0.6, rh = h * 0.5;
@@ -767,6 +775,511 @@ function drawArt(now) {
   }
 }
 
+// ---------- interactive mode: vape shop on Moskoltso (2×2 m) ----------
+S.vapeAction = { label: "Смена", action: true, place: g => g.loc.place, clock: "20:47" };
+const Action = (() => {
+  const W = 600, H = 640, FY = 400, WT = 8, IX0 = 200, IX1 = 400, IY0 = FY + WT, IY1 = IY0 + 200;
+  const D0 = 212, D1 = 290, W0 = 300, W1 = 392;
+  const VX = 80, VY = 180, VWD = 440, VHT = 460;   // camera: the part of the street around the shop
+  const isTouch = matchMedia("(pointer: coarse)").matches;
+  let st = null, cv, ctx, raf = 0, fin = null, sc = 1, ox = 0, oy = 0, last = 0, D = 1;
+  const keys = new Set();
+  let held = false, edge = false;
+  const joy = { id: null, ox: 0, oy: 0, dx: 0, dy: 0 };
+  const ptr = { x: 300, y: 200 };
+  const dist2 = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+  const cl = (v, a, b) => v < a ? a : v > b ? b : v;
+
+  function furniture() {
+    return [
+      [IX0, IY0 + 40, 34, 150],                       // shelf: liquids
+      [IX1 - 48, IY1 - 58, 48, 58],                   // mini fridge
+      [IX0 + 60, IY1 - 34, 96, 34],                   // counter with disposables
+      st.barricaded ? [W0, IY0, W1 - W0, 30] : [IX1 - 34, IY0 + 30, 34, 96], // shelf: disposables (movable)
+    ];
+  }
+  function solids(who) {
+    const L = [[IX0 - WT, FY, WT, IY1 + WT - FY], [IX1, FY, WT, IY1 + WT - FY], [IX0 - WT, IY1, IX1 - IX0 + 2 * WT, WT],
+      [IX0 - WT, FY, D0 - (IX0 - WT), WT], [D1, FY, W0 - D1, WT], [W1, FY, IX1 + WT - W1, WT]];
+    if (!st.glassBroken) L.push([W0, FY, W1 - W0, WT]);
+    if (st.door !== "open") L.push([D0, FY, D1 - D0, WT]);
+    if (who === "p" ? st.shutter >= 0.95 : st.shutter >= 0.7) L.push([IX0 - WT - 6, FY - 14, IX1 - IX0 + 2 * WT + 12, 8]);
+    return L.concat(furniture());
+  }
+  function collide(e, list) {
+    for (const [x, y, w, h] of list) {
+      const nx = cl(e.x, x, x + w), ny = cl(e.y, y, y + h), dx = e.x - nx, dy = e.y - ny, d2 = dx * dx + dy * dy;
+      if (d2 === 0) { const l = e.x - x, r = x + w - e.x, t = e.y - y, b = y + h - e.y, m = Math.min(l, r, t, b); if (m === l) e.x = x - e.r; else if (m === r) e.x = x + w + e.r; else if (m === t) e.y = y - e.r; else e.y = y + h + e.r; }
+      else if (d2 < e.r * e.r) { const d = Math.sqrt(d2); e.x = nx + dx / d * e.r; e.y = ny + dy / d * e.r; }
+    }
+    if (e === st.p) { e.x = cl(e.x, e.r, W - e.r); e.y = cl(e.y, e.r, H - e.r); }
+  }
+  const inside = p => p.y > FY + 2 && p.x > IX0 - 2 && p.x < IX1 + 2;
+
+  function say(text, t = 3.5) { st.say = text; st.sayT = t; const el = $("aSay"); if (el) { el.innerHTML = text; el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); } }
+  function noise(x, y, r) {
+    if (y > FY && st.shutter >= 1) r *= 0.5;           // the closed shutter muffles sounds from inside
+    st.loud = Math.min(1.4, st.loud + r / 320);
+    st.rings.push({ x, y, r, life: 0 }); for (const z of st.zombies) if (!z.inside && dist2(z.x, z.y, x, y) < r && z.state !== "chase") { z.state = "seek"; z.tx = x + rand(-20, 20); z.ty = Math.min(FY - 20, y); } if (st.phase === "night" && st.scratch && st.scratch.on) st.scratch.noise += r / 600; }
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  function start(g, done) {
+    fin = done;
+    st = { phase: "evening", t: 0, p: { x: 300, y: IY1 - 60, r: 12, face: -Math.PI / 2 }, door: "open", locked: false, shutter: 0, lastMash: -9,
+      lights: true, glass: 100, glassBroken: false, push: 0, barricaded: false, fridge: false, powerbank: false,
+      zombies: [], civs: [], rings: [], warns: [], spawnT: 22, charging: false, phaseT: 0, power: 0, say: "", sayT: 0, cause: null, over: false,
+      doorPush: 0, loud: 0, stepT: 0, bumpCd: 0, script: { notif: false, chase: false }, knock: null, inspect: null, guest: null, scratch: null, crawlSaid: false, mashSaid: false, secureT: null, dead: false };
+    const b = $("body");
+    b.innerHTML = `<div class="act">
+      <div class="say" id="aSay">20:47. Обычная смена. Москольцо шумит, как всегда.</div>
+      <div class="stage" id="aStage"><canvas id="aCv"></canvas>
+        <button class="abtn" id="aBtn" type="button" ${isTouch ? "" : "hidden"}>E</button>
+        <div class="ibtns" id="aInsp" hidden><button class="btn" id="aLet" type="button">Впустить</button><button class="btn red" id="aDeny" type="button">Опустить ролету</button></div>
+      </div>
+      <div class="meter"><span>шум</span><span class="nbar"><i id="aLoud"></i></span><b id="aLoudT">тихо</b></div>
+      <div class="prompt" id="aPrompt"></div>
+      <ul class="obj" id="aObj"></ul>
+      <div class="note">${isTouch ? "Веди пальцем по полю — идти. Чуть-чуть отвёл палец — идёшь тихо. Кнопка — действие." : "WASD — идти · Shift — аккуратно и тихо · E / Пробел — действие (жать, держать)"}</div>
+    </div>`;
+    cv = $("aCv"); ctx = cv.getContext("2d");
+    const stage = $("aStage");
+    stage.onpointerdown = e => {
+      if (e.target.closest("button")) return;
+      stage.setPointerCapture(e.pointerId);
+      setPtr(e);
+      if (!st.inspect) { joy.id = e.pointerId; joy.ox = e.clientX; joy.oy = e.clientY; joy.dx = joy.dy = 0; }
+    };
+    stage.onpointermove = e => { setPtr(e); if (e.pointerId === joy.id) { let dx = (e.clientX - joy.ox) / 45, dy = (e.clientY - joy.oy) / 45; const m = Math.hypot(dx, dy); if (m > 1) { dx /= m; dy /= m; } joy.dx = dx; joy.dy = dy; } };
+    stage.onpointerup = stage.onpointercancel = e => { if (e.pointerId === joy.id) { joy.id = null; joy.dx = joy.dy = 0; } };
+    const btn = $("aBtn");
+    btn.onpointerdown = e => { e.preventDefault(); held = true; edge = true; };
+    btn.onpointerup = btn.onpointercancel = btn.onpointerleave = () => { held = false; };
+    $("aLet").onclick = () => endInspect(true);
+    $("aDeny").onclick = () => endInspect(false);
+    last = performance.now();
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+    renderObj();
+  }
+  function setPtr(e) { const r = cv.getBoundingClientRect(); const wx = (e.clientX - r.left - ox) / sc + VX, wy = (e.clientY - r.top - oy) / sc + VY; ptr.x = (wx - VX) * W / VWD; ptr.y = (wy - VY) * H / VHT; }
+  function stop() { cancelAnimationFrame(raf); st = null; held = false; keys.clear(); }
+  addEventListener("keydown", e => {
+    if (!st) return;
+    if (["KeyE", "Space"].includes(e.code)) { e.preventDefault(); if (!e.repeat) { edge = true; } held = true; }
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
+    keys.add(e.code);
+  });
+  addEventListener("keyup", e => { if (!st) return; keys.delete(e.code); if (["KeyE", "Space"].includes(e.code)) held = false; });
+
+  function renderObj() {
+    const o = st.phase === "evening" ? [
+      [st.shutter >= 1, "Опустить ролету до замка"], [st.locked, "Запереть дверь"], [!st.lights, "Выключить свет и вывеску"],
+      [st.fridge, "Забрать воду из холодильника"], [st.barricaded, "Задвинуть стеллаж к витрине"], [st.powerbank, "Взять пауэрбанк"],
+    ] : [
+      [st.knock && st.knock.done, "Стук ночью: решить, кому открывать"], [st.scratch && st.scratch.done, "Пережить скрежет, не выдав себя"],
+    ];
+    const html = o.map(([ok, t]) => `<li class="${ok ? "ok" : ""}">${t}</li>`).join("");
+    const el = $("aObj"); if (el && el.innerHTML !== html) el.innerHTML = html;
+  }
+
+  // ---- interactions ----
+  function interaction() {
+    const p = st.p, c = [];
+    const add = (pri, d, prompt, kind, fn) => c.push({ pri, d, prompt, kind, fn });
+    if (st.inspect) return null;
+    // shutter from outside
+    if (!inside(p) && p.y > FY - 60 && p.y < FY && p.x > IX0 - WT && p.x < IX1 + WT) {
+      if (st.shutter < 0.75) add(0, 0, "Тянуть ролету вниз — <b>жми часто</b>", "mash", () => {
+        st.shutter = Math.min(0.75, st.shutter + 0.065); st.lastMash = st.t; noise(p.x, FY - 10, 230);
+        if (!st.mashSaid) { st.mashSaid = true; say("Ролета тугая и гремит на всё Москольцо. Тяни, пока не встанет на защёлку."); }
+        if (st.shutter >= 0.75) say("Щёлк — встала на уровне колена. Теперь пролезь внутрь под ней и дожми изнутри.");
+      });
+      else if (st.shutter < 1) add(0, 0, "Снаружи до конца не дожать — останешься на улице. <b>Пролезай под ролету</b>", "none", null);
+    }
+    // shutter from inside (door must be open)
+    if (inside(p) && p.y < FY + 70 && p.x > D0 - 12 && p.x < D1 + 12 && st.door === "open") {
+      if (st.phase === "night" && st.knock && st.knock.on && !st.knock.done && st.shutter >= 1) add(0, 0, "Приподнять ролету на ладонь и проверить", "press", () => beginInspect());
+      else if (st.shutter < 0.75) add(0, 0, "Тянуть за нижнюю планку через дверь — <b>жми часто</b>", "mash", () => { st.shutter = Math.min(0.75, st.shutter + 0.045); st.lastMash = st.t; noise(p.x, FY - 10, 230); });
+      else if (st.shutter < 1) add(0, 0, "Дожать до замка: <b>держи и отпусти в зелёной зоне</b>", "hold", null);
+    }
+    // door
+    const dd = dist2(p.x, p.y, (D0 + D1) / 2, FY + 4);
+    if (dd < 52) {
+      if (st.door === "open") add(1, dd, "Закрыть дверь", "press", () => { st.door = "closed"; });
+      else if (!st.locked && inside(p)) add(1, dd, "Запереть дверь на ключ", "press", () => { st.locked = true; say("Ключ дважды проворачивается в замке."); if (st.phase === "evening") tally("good", "Дверь заперта, а не просто закрыта"); });
+      else if (!st.locked) add(1, dd, "Открыть дверь", "press", () => { st.door = "open"; });
+      else add(1, dd, "Отпереть и открыть дверь", "press", () => { st.locked = false; st.door = "open"; });
+    }
+    if (inside(p)) {
+      const ds = dist2(p.x, p.y, IX1 - 12, IY0 + 14);
+      if (ds < 44) add(2, ds, st.lights ? "Выключить свет и вывеску" : "Включить свет", "press", () => { st.lights = !st.lights; if (!st.lights) say("Темно. Неоновое VAPE над дверью гаснет. Теперь с улицы тебя не видно."); });
+      const df = dist2(p.x, p.y, IX1 - 24, IY1 - 50);
+      if (df < 60 && !st.fridge) add(2, df, "Забрать воду и энергетики из холодильника", "press", () => { st.fridge = true; say("6 бутылок воды по 0,5 и 4 энергетика. Воды — 3 литра на всё."); });
+      const dc = dist2(p.x, p.y, IX0 + 108, IY1 - 34);
+      if (dc < 44 && !st.powerbank) add(2, dc, "Взять пауэрбанк с витрины", "press", () => { st.powerbank = true; say("Пауэрбанк на 20 000. Телефон проживёт пару суток."); });
+      const dsh = dist2(p.x, p.y, IX1 - 34, IY0 + 78);
+      if (dsh < 52 && !st.barricaded && st.phase === "evening") add(2, dsh, `Толкать стеллаж к витрине — <b>держи</b> (${Math.round(st.push * 100)}%)`, "holdpush", null);
+    }
+    if (!c.length) return null;
+    c.sort((a, b) => a.pri - b.pri || a.d - b.d);
+    return c[0];
+  }
+
+  // ---- inspection through the gap ----
+  const ZONES = [
+    { id: "hl", name: "левая кисть", x: 190, y: 150 }, { id: "hr", name: "правая кисть", x: 410, y: 150 },
+    { id: "al", name: "левое предплечье", x: 215, y: 250 }, { id: "ar", name: "правое предплечье", x: 385, y: 250 }, { id: "nk", name: "шея", x: 300, y: 300 },
+  ];
+  function beginInspect() {
+    st.shutter = 0.85;
+    st.inspect = { t: 0, max: 15, seen: {}, dwell: {}, bite: G.guestBitten ? pick(ZONES).id : null };
+    ptr.x = 300; ptr.y = 220; joy.id = null; joy.dx = joy.dy = 0;
+    $("aInsp").hidden = false; $("aBtn").hidden = true;
+    say("Ролета приподнята на ладонь. «Покажи руки! Шею!» Свети фонариком: кисти, предплечья, шея.", 6);
+  }
+  function endInspect(letIn) {
+    const ins = st.inspect; if (!ins) return;
+    const all = ZONES.every(z => ins.seen[z.id]);
+    st.inspect = null; $("aInsp").hidden = true; $("aBtn").hidden = !isTouch;
+    st.shutter = 1; st.knock.done = true; st.knock.on = false; st.knock.res = letIn ? "in" : "out";
+    if (letIn) {
+      st.guest = { x: (D0 + D1) / 2, y: FY + 40, bitten: !!ins.bite, turnAt: st.t + 14 };
+      tally(ins.bite ? "bad" : (all ? "good" : "mid"), ins.bite ? "Впустить человека с укусом" : all ? "Проверить руки и шею, потом впустить" : "Впустить, проверив не всё");
+      say(ins.bite ? "Даша протискивается под ролетой и прячет руку за спину." : "Даша протискивается внутрь. «Спасибо… Спасибо». Ролета снова в замке.", 4);
+    } else {
+      tally(ins.bite && ins.seen[ins.bite] ? "good" : ins.bite ? "good" : "mid", ins.bite ? "Не впускать человека с укусом" : "Отказать человеку без укуса");
+      say(ins.bite && ins.seen[ins.bite] ? "Ты видишь укус и опускаешь ролету. Её шаги удаляются." : "Ролета падает обратно в замок. Снаружи всхлипы, потом шаги.", 4);
+    }
+    st.scratchAt = st.t + 6;
+    renderObj();
+  }
+
+  // ---- death / finish ----
+  const TIPS = {
+    outside: "Снаружи ты без защиты. Тяни ролету, пока улица пуста, и смотри по сторонам после каждого рывка: она гремит и зовёт их.",
+    gap: "Через щель под ролетой можно дотянуться до руки. Дожимай до замка сразу и не стой у щели дольше нужного.",
+    glass: "Стекло витрины не держит толпу. Свет внутри — приманка. Выключи его, закрой витрину ролетой или задвинь стеллаж.",
+    door: "Незапертую дверь продавят. Закрыть мало — запри на ключ.",
+    inspect: "Проверка должна быть быстрой: кисти, предплечья, шея — 10 секунд. Чем дольше ролета поднята, тем больше шансов, что подойдут.",
+    guest: "В квадрате 2×2 некуда деться. Впустить человека с укусом в комнату без второго выхода — приговор. Проверяй всё и не верь словам.",
+    touch: "Любое касание — укус. Держи дистанцию: заражённый тянется руками дальше, чем кажется.",
+  };
+  function die(cause, out) {
+    if (st.dead) return;
+    st.dead = true; st.cause = cause;
+    tally("bad", { outside: "Попасться на улице у ролеты", gap: "Задержаться у щели под ролетой", glass: "Витрина не выдержала", door: "Дверь продавили", inspect: "Слишком долгая проверка", guest: "Обратившийся внутри", touch: "Подпустить слишком близко" }[cause]);
+    setTimeout(() => { const f = fin; stop(); f({ tone: "bad", out, tips: [{ v: "bad", tip: TIPS[cause] }], r: { end: cause === "guest" ? "box" : "bitten" } }); }, 900);
+  }
+  function morning() {
+    const f = fin, s = st;
+    if (s.fridge) { G.water += 3; G.f.energy = 4; }
+    if (s.powerbank) G.charge = 100;
+    G.f.shutter = true; G.f.door = true; G.f.dark = !s.lights;
+    if (s.guest && !s.guest.bitten) { G.withGuest = true; G.guestName = "Даша"; G.guestBitten = false; }
+    const tips = [];
+    tips.push({ v: "good", t: "Ролета", tip: "Ролета — главная защита витрины. Опускать её тяжело и громко, поэтому делать это надо сразу, пока улица пуста." });
+    tips.push({ v: s.lights ? "bad" : "good", t: "Свет", tip: s.lights ? "Свет горел всю ночь. Полоски света под ролетой видно с кольца — к утру у витрины собрались." : "Темнота сделала магазин пустым для тех, кто снаружи." });
+    tips.push({ v: s.fridge ? "good" : "bad", t: "Вода", tip: s.fridge ? "Энергетики не заменяют воду: кофеин и сахар усиливают обезвоживание. Пей воду, а энергетик — только чтобы не уснуть." : "Холодильник остался полным. Без крана и подсобки эти 3 литра были единственной водой." });
+    tally(s.lights ? "bad" : "good", s.lights ? "Свет и вывеска горят" : "Свет и вывеска выключены");
+    tally(s.fridge ? "good" : "bad", s.fridge ? "Забрать воду из холодильника" : "Не взять воду");
+    stop();
+    f({ tone: s.lights || !s.fridge ? "mid" : "good", out: `06:10. Ночь кончилась. Ты всё ещё в квадрате 2×2${s.guest && !s.guest.bitten ? ", Даша спит, сидя на полу" : ""}. ${s.fridge ? "Есть 3 литра воды и энергетики, " : "Воды нет, "}еды нет совсем.`, tips, r: { next: NEXT } });
+  }
+
+  // ---- update ----
+  function spawnZ(x, y, extra = {}) { const z = { x, y, r: 12, state: "wander", tx: x < 300 ? W + 40 : -40, ty: y, face: 0, step: rand(0, 6), perceive: 0, inside: false, ...extra }; st.zombies.push(z); return z; }
+  function update(dt) {
+    st.t += dt; st.phaseT += dt;
+    const p = st.p;
+    if (st.sayT > 0) st.sayT -= dt;
+    // --- scripts
+    if (st.phase === "evening") {
+      if (!st.script.notif && st.t > 3) { st.script.notif = true; say("Телефон: «Симферополь. Нападения на людей на Москольце и Киевской. Не выходите на улицу». С кольца доносятся крики.", 6); }
+      if (!st.script.chase && st.t > 9) { st.script.chase = true; st.civs.push({ x: -20, y: FY - 90, vx: 170 }); spawnZ(-90, FY - 95, { state: "pursue", speed: 95 }); }
+      st.spawnT -= dt;
+      if (st.t > 18 && st.spawnT <= 0 && st.zombies.length < 14) {
+        st.spawnT = Math.max(2.8, 8 - st.t / 25);
+        const side = Math.random() < 0.5 ? -1 : 1, y = rand(60, FY - 30);
+        st.warns.push({ side, y, t: 1.6 });
+      }
+      for (let i = st.warns.length - 1; i >= 0; i--) { const w = st.warns[i]; w.t -= dt; if (w.t <= 0) { spawnZ(w.side < 0 ? -20 : W + 20, w.y); st.warns.splice(i, 1); } }
+      if (st.shutter >= 1 && st.locked && inside(p)) {
+        if (st.secureT == null) { st.secureT = st.t; say("Ролета в замке, дверь заперта. Удары с улицы глохнут.", 4); tally("good", "Ролета опущена изнутри, до замка"); }
+        if (st.t - st.secureT > 3.5) toNight();
+      }
+    } else {
+      if (!st.knock && st.phaseT > 4) { st.knock = { on: true, t: 0, done: false }; say("Стук по ролете. Девичий голос: «Откройте! Я Даша, с остановки! Пожалуйста!» Чтобы проверить, открой дверь и подойди к ролете.", 7); }
+      if (st.knock && st.knock.on && !st.inspect) { st.knock.t += dt; if (st.knock.t > 22) { st.knock.on = false; st.knock.done = true; st.knock.res = "ignored"; tally("mid", "Не открывать на стук"); say("Стук стихает. Шаги уходят к кольцу. Потом короткий крик.", 4); st.scratchAt = st.t + 5; renderObj(); } }
+      if (st.inspect) {
+        const ins = st.inspect; ins.t += dt;
+        for (const z of ZONES) if (dist2(ptr.x, ptr.y, z.x, z.y) < 45) { ins.dwell[z.id] = (ins.dwell[z.id] || 0) + dt; if (ins.dwell[z.id] > 0.35) ins.seen[z.id] = true; }
+        if (ins.t >= ins.max) { st.inspect = null; $("aInsp").hidden = true; die("inspect", "Пока ты светишь фонариком на её руки, из темноты подходит ещё один. Его пальцы находят твою руку в щели под ролетой."); return; }
+      }
+      if (st.guest && st.guest.bitten && !st.guest.turned && st.t > st.guest.turnAt) {
+        st.guest.turned = true; say("Даша хрипит и медленно поднимается с пола. В квадрате 2×2 некуда деться.", 5);
+        spawnZ(st.guest.x, st.guest.y, { inside: true, state: "chase", speed: 70 }); st.guest = null;
+      }
+      if (st.scratchAt && !st.scratch && st.t > st.scratchAt) { st.scratch = { on: true, t: 0, noise: 0, done: false }; spawnZ((D0 + D1) / 2, FY - 30, { state: "scratch" }); say("Скрежет по ролете. Медленно, без остановки. <b>Не двигайся и не трогай ничего</b>, пока не уйдёт.", 6); }
+      if (st.scratch && st.scratch.on) {
+        const sc2 = st.scratch; sc2.t += dt; sc2.noise = Math.max(0, sc2.noise - dt * 0.12);
+        if (st.moving && !st.sneak) sc2.noise += dt * 0.35;
+        if (sc2.noise > 1 && !sc2.failed) { sc2.failed = true; G.stress += 30; say("Скрежет обрывается — и в ролету бьют всем телом. Потом второй. Третий.", 4); for (let i = 0; i < 2; i++) spawnZ(rand(IX0, IX1), FY - 40 - i * 20, { state: "scratch" }); }
+        if (sc2.t > 16) { sc2.on = false; sc2.done = true; tally(sc2.failed ? "bad" : "good", sc2.failed ? "Шуметь, когда скребут" : "Замереть, пока скребут"); st.zombies = st.zombies.filter(z => z.inside); say(sc2.failed ? "Под утро удары стихают." : "Скрежет стихает. Шарканье удаляется к кольцу.", 4); st.morningAt = st.t + 4; renderObj(); }
+      }
+      if (st.morningAt && st.t > st.morningAt && !st.zombies.some(z => z.inside)) { morning(); return; }
+    }
+    // --- player
+    let ix = 0, iy = 0;
+    if (!st.inspect) {
+      if (keys.has("KeyW") || keys.has("ArrowUp")) iy -= 1; if (keys.has("KeyS") || keys.has("ArrowDown")) iy += 1;
+      if (keys.has("KeyA") || keys.has("ArrowLeft")) ix -= 1; if (keys.has("KeyD") || keys.has("ArrowRight")) ix += 1;
+      ix += joy.dx; iy += joy.dy;
+    } else {
+      // keyboard moves the flashlight during inspection
+      const lx = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0);
+      const ly = (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0);
+      ptr.x = cl(ptr.x + lx * 260 * dt, 60, 540); ptr.y = cl(ptr.y + ly * 260 * dt, 60, 420);
+    }
+    const m = Math.hypot(ix, iy); if (m > 1) { ix /= m; iy /= m; }
+    const sneakKey = keys.has("ShiftLeft") || keys.has("ShiftRight") || keys.has("KeyC");
+    const sneak = sneakKey || (joy.id != null && m > 0.15 && m < 0.55);
+    st.sneak = sneak;
+    const crawl = p.x > D0 - 4 && p.x < D1 + 4 && p.y > FY - 24 && p.y < FY + 14 && st.shutter >= 0.6 && st.shutter < 0.95;
+    let sp = (st.charging || st.pushing) ? 0 : crawl ? 38 : sneak ? 55 : 125;
+    st.crawl = crawl; st.moving = m > 0.15 && sp > 0;
+    if (crawl && !st.crawlSaid && m > 0.15) { st.crawlSaid = true; say("Ползком под ролетой. Медленно — и спиной к улице.", 2.5); }
+    if (m > 0.15) p.face = Math.atan2(iy, ix);
+    const wantX = p.x + ix * sp * dt, wantY = p.y + iy * sp * dt;
+    p.x = wantX; p.y = wantY;
+    collide(p, solids("p"));
+    // bumping into furniture at full speed knocks bottles off the shelves
+    st.bumpCd -= dt;
+    const blocked = Math.hypot(p.x - wantX, p.y - wantY);
+    if (!sneak && !crawl && sp > 100 && blocked > 0.8 && st.bumpCd <= 0) {
+      const f = furniture().find(([x, y, w, h]) => p.x > x - p.r - 3 && p.x < x + w + p.r + 3 && p.y > y - p.r - 3 && p.y < y + h + p.r + 3);
+      if (f) { st.bumpCd = 1.2; noise(p.x, p.y, 280); st.bumps = (st.bumps || 0) + 1; say(pick(["Плечом в стеллаж — жижи с грохотом сыплются на пол!", "Задет угол стеллажа. Одноразки разлетаются по плитке.", "Звон стекла: с полки упали флаконы. Снаружи кто-то повернул голову."]), 2.5); if (st.bumps === 1) tally("bad", "Задеть стеллаж в темноте на бегу"); }
+    }
+    // footsteps
+    st.stepT -= dt;
+    if (st.moving && !sneak && !crawl && st.stepT <= 0) { st.stepT = 0.45; noise(p.x, p.y, 95); }
+    st.loud = Math.max(0, st.loud - dt * 0.6);
+    // --- interactions
+    const it = interaction(); st.it = it;
+    st.pushing = false;
+    if (it) {
+      if ((it.kind === "press" || it.kind === "mash") && edge) it.fn();
+      if (it.kind === "hold") {
+        if (held) { st.charging = true; st.power += dt * 1.7; }
+        else if (st.charging) {
+          st.charging = false; const pw = (1 - Math.cos(st.power)) / 2;
+          if (pw > 0.72 && pw < 0.93) { st.shutter = 1; noise(p.x, FY - 10, 160); say("Рывок — щёлк! Ролета села в замок. Теперь закрой и запри дверь.", 4); }
+          else { st.shutter = 0.6; noise(p.x, FY - 10, 320); say(pw <= 0.72 ? "Слабо! Ролета пружинит и подпрыгивает вверх. Грохот на всё кольцо." : "Перебор — сорвалась с направляющей и подскочила. Грохот на всё кольцо.", 3); }
+          st.power = 0;
+        }
+      } else st.charging = false;
+      if (it.kind === "holdpush" && held) {
+        st.pushing = true; st.push += dt / 3.2;
+        if (Math.floor(st.push * 5) !== Math.floor((st.push - dt / 3.2) * 5)) noise(p.x, p.y, 210);
+        if (st.push >= 1) { st.barricaded = true; say("Стеллаж с одноразками стоит вплотную к витрине. Пол усыпан упавшими жижами.", 3.5); tally("good", "Задвинуть стеллаж к витрине"); p.x = 300; p.y = IY0 + 70; }
+      }
+    } else st.charging = false;
+    edge = false;
+    if (st.shutter < 0.75 && st.shutter > 0 && st.t - st.lastMash > 0.35) st.shutter = Math.max(0, st.shutter - 0.07 * dt);
+    // --- civilians
+    for (const c of st.civs) c.x += c.vx * dt;
+    st.civs = st.civs.filter(c => c.x < W + 60);
+    // --- zombies
+    const pIn = inside(p);
+    for (const z of st.zombies) {
+      z.perceive -= dt;
+      if (z.state === "pursue") { z.tx = W + 80; z.ty = FY - 95; if (z.x > W + 40) z.gone = true; }
+      else if (z.state === "scratch") { z.tx = z.x; z.ty = FY - 22; }
+      else if (z.perceive <= 0) {
+        z.perceive = 0.2;
+        let sees = false;
+        if (z.inside) sees = true;
+        else if (!pIn) sees = dist2(z.x, z.y, p.x, p.y) < 250;
+        else if (st.shutter < 0.95) sees = dist2(z.x, z.y, p.x, p.y) < (st.lights ? 400 : 120);
+        if (sees) { z.state = "chase"; }
+        else if (z.state === "chase") { z.state = "seek"; z.tx = p.x; z.ty = Math.min(p.y, FY - 20); }
+      }
+      if (z.state === "chase") { z.tx = p.x; z.ty = p.y; }
+      if (z.state === "seek" && dist2(z.x, z.y, z.tx, z.ty) < 16) { z.state = "wander"; z.tx = z.x < 300 ? W + 40 : -40; z.ty = z.y; }
+      const speed = z.speed || (z.state === "chase" ? 78 : z.state === "seek" ? 52 : z.state === "scratch" ? 20 : 28);
+      const a = Math.atan2(z.ty - z.y, z.tx - z.x);
+      if (dist2(z.x, z.y, z.tx, z.ty) > 4) { z.x += Math.cos(a) * speed * dt; z.y += Math.sin(a) * speed * dt; z.face = a; z.step += dt * speed / 30; }
+      if (z.state === "wander" && (z.x < -30 || z.x > W + 30)) z.gone = true;
+      collide(z, solids("z"));
+      // banging on the window
+      if (!z.inside && z.state === "chase" && pIn && !st.glassBroken && st.shutter < 0.95 && z.y > FY - 30 && z.x > W0 - 10 && z.x < W1 + 10) {
+        st.glass -= 7 * dt; if (Math.random() < dt * 2) noise(z.x, z.y, 150);
+        if (st.glass <= 0) { st.glassBroken = true; say(st.barricaded ? "Стекло витрины лопается! Стеллаж держит." : "Стекло витрины лопается!", 3); }
+      }
+      // pushing an unlocked door
+      if (!z.inside && st.door === "closed" && !st.locked && z.y > FY - 30 && z.x > D0 - 6 && z.x < D1 + 6 && z.state === "chase") { st.doorPush += dt; if (st.doorPush > 2.5) { st.door = "open"; say("Незапертую дверь продавили!", 3); } }
+      // contact
+      const d = dist2(z.x, z.y, p.x, p.y);
+      if (d < z.r + p.r - 1) { die(z.inside ? "guest" : !pIn ? "outside" : st.glassBroken ? "glass" : st.door === "open" && st.doorPush > 2.5 ? "door" : "touch", z.inside ? "Она тянется к тебе через весь магазин — это два шага. Спрятаться некуда." : !pIn ? "Ты слишком долго возишься с ролетой. Чужая рука ложится на плечо." : "Холодные пальцы смыкаются на твоём запястье."); return; }
+      if (!z.inside && st.shutter < 1 && st.shutter >= 0.7 && st.door === "open" && z.y > FY - 34 && Math.abs(z.x - p.x) < 34 && pIn && p.y < FY + 34) { die("gap", "Под ролетой щель. Из неё высовывается рука и хватает тебя за щиколотку."); return; }
+    }
+    st.zombies = st.zombies.filter(z => !z.gone);
+    for (let i = st.rings.length - 1; i >= 0; i--) { st.rings[i].life += dt; if (st.rings[i].life > 0.9) st.rings.splice(i, 1); }
+  }
+  function toNight() {
+    st.phase = "night"; st.phaseT = 0; st.zombies = []; st.warns = []; st.civs = [];
+    renderTop(1, 3, G.loc.place, "23:50", "Ночь");
+    say("23:50. Ночь. На кольце горят брошенные машины. Свет в городе мигает и гаснет.", 5);
+    renderObj();
+  }
+
+  // ---- draw ----
+  function fig(x, y, r, face, col, arms, step) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(face);
+    if (arms) { ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.lineCap = "round"; const s = Math.sin(step * 3) * 2; ctx.beginPath(); ctx.moveTo(2, -r * 0.6); ctx.lineTo(r + 9 + s, -r * 0.5); ctx.moveTo(2, r * 0.6); ctx.lineTo(r + 9 - s, r * 0.5); ctx.stroke(); }
+    ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(2, 3, r, r * 0.9, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(0, 0, r * 0.75, r, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.beginPath(); ctx.arc(1, 0, r * 0.5, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+  function draw(now) {
+    const r = cv.getBoundingClientRect(); D = Math.min(2, devicePixelRatio || 1);
+    if (cv.width !== Math.round(r.width * D) || cv.height !== Math.round(r.height * D)) { cv.width = Math.round(r.width * D); cv.height = Math.round(r.height * D); }
+    sc = Math.min(r.width / VWD, r.height / VHT); ox = (r.width - VWD * sc) / 2; oy = (r.height - VHT * sc) / 2;
+    ctx.setTransform(D, 0, 0, D, 0, 0); ctx.fillStyle = "#07090d"; ctx.fillRect(0, 0, r.width, r.height);
+    ctx.setTransform(D * sc, 0, 0, D * sc, D * (ox - VX * sc), D * (oy - VY * sc));
+    ctx.save(); ctx.beginPath(); ctx.rect(VX, VY, VWD, VHT); ctx.clip();
+    const night = st.phase === "night", t = now / 1000;
+    // road + Moskoltso ring
+    ctx.fillStyle = "#16191f"; ctx.fillRect(0, 0, W, 260);
+    ctx.strokeStyle = "rgba(230,210,150,.18)"; ctx.lineWidth = 3; ctx.setLineDash([20, 22]);
+    ctx.beginPath(); ctx.arc(300, -520, 640, 0.35 * Math.PI, 0.65 * Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.arc(300, -520, 700, 0.36 * Math.PI, 0.64 * Math.PI); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#1d3a24"; ctx.beginPath(); ctx.arc(300, -520, 590, 0, Math.PI); ctx.fill();
+    ctx.fillStyle = "rgba(236,232,222,.35)"; ctx.font = "13px 'PT Mono', monospace"; ctx.textAlign = "center"; ctx.fillText("МОСКОЛЬЦО → кольцо, остановки, рынок", 300, 200);
+    ctx.strokeStyle = "rgba(160,170,190,.25)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, 150); ctx.lineTo(W, 150); ctx.moveTo(0, 160); ctx.lineTo(W, 160); ctx.stroke();
+    // a stopped trolleybus
+    ctx.fillStyle = "#3d5a72"; ctx.fillRect(60, 175, 200, 46); ctx.fillStyle = "rgba(150,190,220,.35)"; for (let i = 0; i < 6; i++) ctx.fillRect(70 + i * 31, 180, 22, 12);
+    // sidewalk
+    ctx.fillStyle = "#23272f"; ctx.fillRect(0, 260, W, FY - 260);
+    ctx.strokeStyle = "rgba(255,255,255,.04)"; for (let x = 0; x < W; x += 30) { ctx.beginPath(); ctx.moveTo(x, 260); ctx.lineTo(x, FY); ctx.stroke(); }
+    // neighbours (other shops) and walls
+    ctx.fillStyle = "#2b2f38"; ctx.fillRect(0, FY, IX0 - WT, H - FY); ctx.fillRect(IX1 + WT, FY, W - IX1 - WT, H - FY);
+    ctx.fillStyle = "rgba(236,232,222,.25)"; ctx.font = "11px 'PT Mono', monospace"; ctx.fillText("ШАУРМА · ЗАКРЫТО", 100, FY + 40); ctx.fillText("САЛОН СВЯЗИ", 500, FY + 40);
+    // interior
+    const lit = st.lights;
+    ctx.fillStyle = lit ? "#3a3346" : "#1b1a22"; ctx.fillRect(IX0, IY0 - WT, IX1 - IX0, IY1 - IY0 + WT);
+    if (lit) { const g = ctx.createRadialGradient(300, IY0 + 90, 10, 300, IY0 + 90, 160); g.addColorStop(0, "rgba(190,110,255,.25)"); g.addColorStop(1, "rgba(190,110,255,0)"); ctx.fillStyle = g; ctx.fillRect(IX0, IY0, 200, 200); }
+    const [sl, fr, co, sr] = furniture();
+    ctx.fillStyle = "#4a3f33"; ctx.fillRect(...sl); for (let i = 0; i < 12; i++) { ctx.fillStyle = ["#e8417a", "#38c6d9", "#f2c14e", "#7cdd6a", "#a070ff"][i % 5]; ctx.fillRect(sl[0] + 6 + (i % 2) * 13, sl[1] + 8 + Math.floor(i / 2) * 24, 9, 14); }
+    ctx.fillStyle = "#cfd8e0"; ctx.fillRect(...fr); ctx.fillStyle = st.fridge ? "#7f8c96" : "#7fb6d9"; ctx.fillRect(fr[0] + 5, fr[1] + 5, fr[2] - 10, fr[3] - 10);
+    if (!st.fridge) for (let i = 0; i < 6; i++) { ctx.fillStyle = i < 4 ? "#dff2ff" : "#ff6a3d"; ctx.fillRect(fr[0] + 9 + (i % 3) * 11, fr[1] + 10 + Math.floor(i / 3) * 20, 7, 14); }
+    ctx.fillStyle = "#2c2a33"; ctx.fillRect(...co); for (let i = 0; i < 7; i++) { ctx.fillStyle = ["#ff5fa2", "#59e0d0", "#ffd166", "#9b7bff"][i % 4]; ctx.fillRect(co[0] + 8 + i * 12, co[1] + 8, 6, 16); }
+    if (!st.powerbank) { ctx.fillStyle = "#222"; ctx.fillRect(co[0] + 80, co[1] + 20, 12, 8); }
+    ctx.fillStyle = "#4a3f33"; ctx.fillRect(...sr); for (let i = 0; i < 8; i++) { ctx.fillStyle = ["#ff5fa2", "#59e0d0", "#ffd166", "#9b7bff"][i % 4]; ctx.fillRect(sr[0] + 4 + (i % 4) * (sr[2] > 40 ? 22 : 7), sr[1] + 6 + Math.floor(i / 4) * (sr[2] > 40 ? 12 : 40), 5, 10); }
+    if (st.pushing || (st.push > 0 && !st.barricaded)) { ctx.fillStyle = "rgba(241,176,63,.9)"; ctx.fillRect(sr[0] - 4, sr[1] - 10, (sr[2] + 8) * st.push, 4); }
+    // light switch
+    ctx.fillStyle = lit ? "#f1b03f" : "#555"; ctx.fillRect(IX1 - 12, IY0 + 6, 8, 12);
+    // walls
+    ctx.fillStyle = "#5a5f6b";
+    for (const w of solids("x").slice(0, 6)) ctx.fillRect(...w);
+    // window glass
+    if (!st.glassBroken) { ctx.fillStyle = `rgba(140,190,230,${lit ? 0.55 : 0.3})`; ctx.fillRect(W0, FY, W1 - W0, WT); ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 1; const cr = (100 - st.glass) / 100; for (let i = 0; i < cr * 8; i++) { ctx.beginPath(); ctx.moveTo(W0 + 10 + i * 10, FY); ctx.lineTo(W0 + 16 + i * 10, FY + WT); ctx.stroke(); } }
+    else { ctx.fillStyle = "rgba(180,220,240,.6)"; for (let i = 0; i < 14; i++) ctx.fillRect(W0 + (i * 37) % 90, FY - 6 + (i * 13) % 26, 3, 2); }
+    // door
+    if (st.door === "open") { ctx.strokeStyle = "#8b6a48"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(D0, FY + 4); ctx.lineTo(D0 + 18, FY + 4 + 70); ctx.stroke(); }
+    else { ctx.fillStyle = "#8b6a48"; ctx.fillRect(D0, FY, D1 - D0, WT); if (st.locked) { ctx.fillStyle = "#f1b03f"; ctx.fillRect(D1 - 14, FY + 1, 6, 6); } }
+    // neon sign above the door (outside)
+    const neon = lit && !night ? 1 : lit ? 0.7 : 0;
+    ctx.font = "bold 16px 'Russo One', sans-serif"; ctx.textAlign = "center";
+    ctx.fillStyle = neon ? `rgba(190,110,255,${0.6 + 0.4 * Math.sin(t * 9) ** 2})` : "#444"; if (neon) { ctx.shadowColor = "#b05cff"; ctx.shadowBlur = 14; }
+    ctx.fillText("VAPE", 300, FY - 26); ctx.shadowBlur = 0;
+    // shutter
+    ctx.fillStyle = "#2a2d33"; ctx.fillRect(IX0 - WT - 6, FY - 20, IX1 - IX0 + 2 * WT + 12, 8);
+    if (st.shutter > 0) { ctx.fillStyle = `rgba(150,156,166,${0.25 + 0.7 * st.shutter})`; ctx.fillRect(IX0 - WT - 6, FY - 14, IX1 - IX0 + 2 * WT + 12, 8); ctx.strokeStyle = "rgba(0,0,0,.4)"; ctx.lineWidth = 1; for (let x = IX0 - WT; x < IX1 + WT; x += 6) { ctx.beginPath(); ctx.moveTo(x, FY - 14); ctx.lineTo(x, FY - 6); ctx.stroke(); } }
+    // civilians, guest, zombies, player
+    for (const c of st.civs) fig(c.x, c.y, 11, 0, "#9fc3e0", false, 0);
+    if (st.knock && st.knock.on) fig((D0 + D1) / 2 + Math.sin(t * 6) * 2, FY - 34, 11, Math.PI / 2, "#e0a8c8", false, 0);
+    if (st.guest) fig(st.guest.x, st.guest.y, 11, -Math.PI / 2, st.guest.bitten && st.t > st.guest.turnAt - 6 ? "#b8a0a8" : "#e0a8c8", false, 0);
+    for (const z of st.zombies) fig(z.x, z.y, z.r, z.face, z.inside ? "#8f7d86" : "#7a9a55", true, z.step);
+    const p = st.p;
+    if (st.crawl) { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.face); ctx.fillStyle = "#f2e6c4"; ctx.beginPath(); ctx.ellipse(0, 0, 15, 8, 0, 0, 7); ctx.fill(); ctx.restore(); }
+    else fig(p.x, p.y, p.r, p.face, "#f2e6c4", false, 0);
+    // noise rings
+    for (const rg of st.rings) { const k = rg.life / 0.9; ctx.strokeStyle = `rgba(229,72,59,${(1 - k) * 0.6})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(rg.x, rg.y, rg.r * (0.25 + 0.75 * k), 0, 7); ctx.stroke(); }
+    // darkness
+    ctx.fillStyle = night ? "rgba(3,5,12,.72)" : "rgba(10,12,30,.28)"; ctx.fillRect(0, 0, W, H);
+    if (night) {
+      ctx.globalCompositeOperation = "lighter";
+      const g = ctx.createRadialGradient(p.x, p.y, 5, p.x, p.y, 110); g.addColorStop(0, "rgba(120,120,140,.35)"); g.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      for (const fx of [120, 480]) { const f = ctx.createRadialGradient(fx, 110, 4, fx, 110, 90); f.addColorStop(0, `rgba(240,110,40,${0.35 + 0.1 * Math.sin(t * 8 + fx)})`); f.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = f; ctx.fillRect(0, 0, W, H); }
+      ctx.globalCompositeOperation = "source-over";
+    }
+    // edge warnings
+    for (const w of st.warns) { ctx.fillStyle = `rgba(229,72,59,${0.5 + 0.5 * Math.sin(t * 12)})`; ctx.beginPath(); const x = w.side < 0 ? VX + 10 : VX + VWD - 10; ctx.moveTo(x, w.y - 12); ctx.lineTo(x + (w.side < 0 ? 14 : -14), w.y); ctx.lineTo(x, w.y + 12); ctx.fill(); }
+    // shutter gauge
+    const gx = IX1 + 40, gy = FY - 150, gh = 110;
+    ctx.fillStyle = "rgba(12,15,21,.9)"; ctx.fillRect(gx - 6, gy - 22, 60, gh + 34);
+    ctx.fillStyle = "#e4e1d8"; ctx.font = "10px 'PT Mono', monospace"; ctx.textAlign = "left"; ctx.fillText("РОЛЕТА", gx - 2, gy - 8);
+    ctx.fillStyle = "#1e232d"; ctx.fillRect(gx, gy, 16, gh);
+    ctx.fillStyle = st.shutter >= 1 ? "#4fc685" : "#9aa0aa"; ctx.fillRect(gx, gy, 16, gh * st.shutter);
+    ctx.fillStyle = "#f1b03f"; ctx.fillRect(gx - 3, gy + gh * 0.75, 22, 2); ctx.fillText("щель", gx + 22, gy + gh * 0.75 + 4);
+    ctx.fillText(st.shutter >= 1 ? "замок" : Math.round(st.shutter * 100) + "%", gx + 22, gy + gh - 2);
+    if (st.it && st.it.kind === "hold") {
+      const pw = (1 - Math.cos(st.power)) / 2;
+      ctx.fillStyle = "#1e232d"; ctx.fillRect(gx + 30, gy, 10, gh); ctx.fillStyle = "rgba(79,198,133,.7)"; ctx.fillRect(gx + 30, gy + gh * (1 - 0.93), 10, gh * 0.21);
+      ctx.fillStyle = "#fff"; ctx.fillRect(gx + 27, gy + gh * (1 - pw) - 1, 16, 3);
+    }
+    ctx.restore();
+    if (st.inspect) drawInspect(t);
+    // joystick hint
+    if (joy.id != null) { ctx.setTransform(D, 0, 0, D, 0, 0); const rr = cv.getBoundingClientRect(); ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(joy.ox - rr.left, joy.oy - rr.top, 40, 0, 7); ctx.stroke(); ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.arc(joy.ox - rr.left + joy.dx * 40, joy.oy - rr.top + joy.dy * 40, 14, 0, 7); ctx.fill(); }
+  }
+  function drawInspect(t) {
+    const ins = st.inspect;
+    ctx.setTransform(D * sc, 0, 0, D * sc, D * ox, D * oy);
+    ctx.scale(VWD / W, VHT / H);
+    ctx.fillStyle = "#020304"; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.beginPath(); ctx.arc(ptr.x, ptr.y, 75, 0, 7); ctx.clip();
+    ctx.fillStyle = "#2e2a28"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#5c4f4a"; ctx.beginPath(); ctx.ellipse(300, 470, 150, 140, 0, 0, 7); ctx.fill();      // body
+    ctx.fillStyle = "#c9a888"; ctx.fillRect(285, 280, 30, 40);                                             // neck
+    ctx.fillStyle = "#c9a888"; ctx.beginPath(); ctx.arc(300, 230, 55, 0, 7); ctx.fill();                  // head
+    ctx.fillStyle = "#3a2a22"; ctx.beginPath(); ctx.arc(300, 215, 58, Math.PI, 0); ctx.fill();
+    ctx.strokeStyle = "#c9a888"; ctx.lineWidth = 30; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(190, 400); ctx.lineTo(215, 250); ctx.lineTo(190, 160); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(410, 400); ctx.lineTo(385, 250); ctx.lineTo(410, 160); ctx.stroke();
+    ctx.fillStyle = "#c9a888"; ctx.beginPath(); ctx.arc(190, 145, 22, 0, 7); ctx.arc(410, 145, 22, 0, 7); ctx.fill();
+    if (ins.bite) { const z = ZONES.find(q => q.id === ins.bite); ctx.fillStyle = "#e8e2d6"; ctx.fillRect(z.x - 20, z.y - 9, 40, 18); ctx.fillStyle = "#8a1d16"; ctx.beginPath(); ctx.arc(z.x, z.y, 6, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(z.x + 9, z.y + 3, 3, 0, 7); ctx.fill(); }
+    ctx.restore();
+    // zone markers
+    ctx.font = "13px 'PT Mono', monospace"; ctx.textAlign = "center";
+    for (const z of ZONES) {
+      const seen = ins.seen[z.id], bad = seen && ins.bite === z.id;
+      ctx.strokeStyle = !seen ? "rgba(241,176,63,.55)" : bad ? "#e5483b" : "#4fc685"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(z.x, z.y, 30, 0, Math.PI * 2 * Math.min(1, (ins.dwell[z.id] || 0) / 0.35)); ctx.stroke();
+      if (seen) { ctx.fillStyle = bad ? "#e5483b" : "#4fc685"; ctx.fillText(bad ? "УКУС" : "чисто", z.x, z.y - 36); }
+    }
+    ctx.fillStyle = "#ece8de"; ctx.font = "15px 'PT Sans', sans-serif"; ctx.fillText(`Проверено: ${ZONES.filter(z => ins.seen[z.id]).length}/5`, 300, 560);
+    const k = ins.t / ins.max; ctx.fillStyle = "#1e232d"; ctx.fillRect(100, 580, 400, 10); ctx.fillStyle = "#e5483b"; ctx.fillRect(100, 580, 400 * (1 - k), 10);
+    ctx.fillStyle = "#8d94a3"; ctx.font = "12px 'PT Mono', monospace"; ctx.fillText("шарканье всё ближе", 300, 610);
+  }
+  function loop(now) {
+    if (!st) return;
+    raf = requestAnimationFrame(loop);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!st.dead) update(dt);
+    if (!st) return;
+    draw(now);
+    const pr = $("aPrompt");
+    const txt = st.inspect ? "Веди фонарик по кистям, предплечьям и шее. Потом реши." : st.it ? `<kbd>${isTouch ? "●" : "E"}</kbd> ${st.it.prompt}` : st.phase === "night" && st.scratch && st.scratch.on ? `Тишина: <span class="nbar"><i style="width:${Math.min(100, st.scratch.noise * 100)}%"></i></span>` : "";
+    if (pr.innerHTML !== txt) pr.innerHTML = txt;
+    const L = Math.min(1, st.loud), li = $("aLoud"); if (li) { li.style.width = (L * 100).toFixed(0) + "%"; li.style.background = L > 0.66 ? "var(--alarm)" : L > 0.25 ? "var(--warn)" : "var(--ok)"; }
+    const lt = $("aLoudT"), ltxt = L > 0.66 ? "грохот" : L > 0.25 ? "слышно" : st.sneak && st.moving ? "крадёшься" : "тихо"; if (lt && lt.textContent !== ltxt) lt.textContent = ltxt;
+    const btn = $("aBtn"); if (btn && st.it) btn.textContent = st.it.kind === "mash" ? "Жми!" : st.it.kind === "hold" || st.it.kind === "holdpush" ? "Держи" : "E";
+    renderObj();
+  }
+  return { start, stop, _st: () => st, _ptr: ptr };
+})();
+
 // ---------- engine ----------
 let cur = null, timerId = null, deadline = 0, selected = [];
 function setArt(k) { if (k !== artKind) { artKind = k; artT0 = performance.now(); } }
@@ -785,7 +1298,7 @@ function renderTop(stage, total, place, clock, label) {
 function renderRes() {
   if (!G) { $("res").innerHTML = ""; return; }
   clampRes();
-  $("res").innerHTML = `<span class="${G.water < 5 ? "low" : ""}">вода <b>${G.water} л</b></span><span class="${G.food <= 0 ? "low" : ""}">еда <b>${G.food > 0 ? G.food + " дн" : "нет"}</b></span><span class="${G.charge < 15 ? "low" : ""}">заряд <b>${G.charge}%</b></span><span class="${G.stress > 70 ? "low" : ""}">стресс <b>${G.stress}</b></span>${G.withGuest ? `<span>с тобой <b>${G.guestName}</b></span>` : ""}${G.f.kid ? "<span>с тобой <b>Аня</b></span>" : ""}${G.f.car ? "<span><b>машина</b></span>" : ""}`;
+  $("res").innerHTML = `<span class="${G.water < 5 ? "low" : ""}">вода <b>${G.water} л</b></span><span class="${G.food <= 0 ? "low" : ""}">еда <b>${G.food > 0 ? G.food + " дн" : "нет"}</b></span><span class="${G.charge < 15 ? "low" : ""}">заряд <b>${G.charge}%</b></span><span class="${G.stress > 70 ? "low" : ""}">стресс <b>${G.stress}</b></span>${G.withGuest ? `<span>с тобой <b>${G.guestName}</b></span>` : ""}${G.f.kid ? "<span>с тобой <b>Аня</b></span>" : ""}${G.f.car ? "<span><b>машина</b></span>" : ""}${G.f.energy ? `<span>энергетики <b>${G.f.energy}</b></span>` : ""}`;
 }
 function storyProgress(p) { const now = document.querySelector(".stories i.now"); if (now) now.style.setProperty("--p", (p * 100).toFixed(1) + "%"); }
 
@@ -796,6 +1309,13 @@ function show(id) {
   const sc = S[id];
   if (sc.skip && sc.skip(G)) { show(NEXT); return; }
   cur = sc; selected = [];
+  if (sc.action) {
+    renderTop(0, 3, val(sc.place), sc.clock, sc.label);
+    $("artBox").hidden = true;
+    Action.start(G, res => { $("artBox").hidden = false; setArt(res.r.end ? "bitten" : "dawn"); renderTop(2, 3, val(sc.place), "06:10", "Утро"); verdict(res.tone, res.out, res.tips, res.r); });
+    return;
+  }
+  $("artBox").hidden = false;
   if (sc.enter) sc.enter(G);
   renderTop(stageOf(id), G.flow.length + 3, val(sc.place), sc.clock, sc.label);
   setArt(val(sc.art));
@@ -862,7 +1382,7 @@ function verdict(tone, out, tips, r) {
   b.innerHTML = `<div class="verdict">
       <span class="stamp ${tone}">${STAMP[tone]}</span>
       ${out ? `<p class="outcome">${out}</p>` : ""}
-      ${tips.map(x => `<div class="why ${x.v}"><b>${x.t ? esc(x.t) : "почему так"}</b>${x.tip}</div>`).join("")}
+      ${tips.map(x => `<div class="why ${x.v}"><b>${x.t ? esc(x.t) : "почему так"}</b>${val(x.tip)}</div>`).join("")}
       <button class="btn ${dead ? "red" : ""}" id="next" type="button">${r.end ? "Чем всё кончилось" : "Дальше"}</button>
     </div>`;
   b.classList.remove("fade", "shake"); void b.offsetWidth; b.classList.add(tone === "bad" ? "shake" : "fade"); b.scrollTop = 0;
@@ -871,6 +1391,7 @@ function verdict(tone, out, tips, r) {
   const n = $("next"); n.onclick = () => r.end ? ending(r.end) : show(r.next || NEXT); n.focus({ preventScroll: true });
 }
 function ending(id) {
+  Action.stop(); $("artBox").hidden = false;
   const e = END[id];
   setArt(e.art);
   renderTop(0, 0, "Итог · " + G.loc.name, "день 1", "итог");
@@ -890,6 +1411,7 @@ function ending(id) {
   $("again").onclick = menu; $("retry").onclick = () => startRun(loc); $("retry").focus({ preventScroll: true });
 }
 function menu() {
+  Action.stop(); $("artBox").hidden = false;
   G = null; clearInterval(timerId); renderTop(0, 0, "ZombiCraumia", "день 1", ""); setArt("menu");
   const ids = Object.keys(LOCS);
   $("body").innerHTML = `<div class="verdict">
@@ -918,7 +1440,7 @@ addEventListener("keydown", e => {
 });
 sizeArt(); requestAnimationFrame(drawArt);
 menu();
-window.__zc = { S, LOCS, get G() { return G; }, show, startRun }; // for automated tests
+window.__zc = { Action, S, LOCS, get G() { return G; }, show, startRun }; // for automated tests
 })();
 </script>
 <!--ARTIFACT-BODY-END-->
