@@ -238,28 +238,28 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const LOCS = {
   home16: { diff: 3, name: "Дом, 16 этаж", where: "ул. Беспалова", place: "Кв. 121 · 16 этаж", sum: "Самый верх. Напор пропадёт первым, лифт встанет.", res: "от первого лица · напор уйдёт за минуты",
             water: 0, food: 3, charge: 35, kind: "home", door: "door", clock: "21:14", art: "tv", floor: 16,
-            flow: ["flatAction", "supply", "radio"], action: true },
+            flow: ["flatAction", "evacAction"], action: true },
   home9:  { diff: 2, name: "Дом, 9 этаж", where: "ул. Балаклавская", place: "Кв. 47 · 9 этаж", sum: "Дома, высоко. Вода из крана, пока она есть.", res: "от первого лица · вода, дверь, пожар",
             water: 0, food: 3, charge: 35, kind: "home", door: "door", clock: "21:14", art: "tv", floor: 9,
-            flow: ["flatAction", "supply", "radio"], action: true },
+            flow: ["flatAction", "evacAction"], action: true },
   home1:  { diff: 3, name: "Дом, 1 этаж", where: "ул. Жуковского", place: "Кв. 3 · 1 этаж", sum: "Окна на уровне улицы. Сюда можно просто влезть.", res: "от первого лица · окно на улицу",
             water: 0, food: 3, charge: 40, kind: "home", door: "door", clock: "21:14", art: "tv", floor: 1,
-            flow: ["flatAction", "supply", "radio"], action: true },
+            flow: ["flatAction", "evacAction"], action: true },
   vape:   { diff: 4, name: "Вейп-шоп на Москольце", where: "площадь Москольцо", place: "Вейп-шоп · Москольцо", sum: "Квадрат 2×2: стеллажи, мини-холодильник, дверь и витрина. Ни подсобки, ни крана.", res: "от первого лица · ролету опускать самому",
             water: 0, food: 0, charge: 70, kind: "shop", door: "glass", clock: "20:47", art: "vape", supply: "продуктовый через дорогу, у остановки на Москольце", action: true,
-            flow: ["vapeAction", "supply", "radio"] },
-  store:  { diff: 3, name: "Продуктовый на Киевской", where: "ул. Киевская", place: "Магазин · Киевская", sum: "Ты зашёл за хлебом. В зале человек тридцать.", res: "еда вокруг · толпа и паника",
+            flow: ["vapeAction", "evacAction"] },
+  store:  { diff: 3, name: "Продуктовый на Киевской", where: "ул. Киевская", place: "Магазин · Киевская", sum: "Ты зашёл за хлебом. В зале человек тридцать.", res: "от первого лица · толпа, склад, засов",
             water: 2, food: 1, charge: 40, kind: "shop", door: "glass", clock: "20:31", art: "store",
-            flow: ["storeOpen", "prep", "knock", "night", "radio"] },
-  pharm:  { diff: 2, name: "Аптека на Пушкинской", where: "ул. Пушкинская", place: "Аптека · Пушкинская", sum: "Ты фармацевт. Сюда придут первые раненые.", res: "лекарства есть · еды нет",
+            flow: ["worldAction", "evacAction"], action: true },
+  pharm:  { diff: 2, name: "Аптека на Пушкинской", where: "ул. Пушкинская", place: "Аптека · Пушкинская", sum: "Ты фармацевт. Сюда придут первые раненые.", res: "от первого лица · раненые, решётка, лоток",
             water: 10, food: 0, charge: 50, kind: "shop", door: "glass", clock: "20:58", art: "pharm", meds: true, supply: "круглосуточный продуктовый в соседнем доме",
-            flow: ["pharmOpen", "prep", "night", "supply", "radio"] },
-  garage: { diff: 3, name: "Гараж у Залесской", where: "гаражный кооператив", place: "Гараж №112", sum: "Ты возишься с машиной. Бак полный, воды нет.", res: "машина есть · воды нет",
+            flow: ["worldAction", "evacAction"], action: true },
+  garage: { diff: 3, name: "Гараж у Залесской", where: "гаражный кооператив", place: "Гараж №112", sum: "Ты возишься с машиной. Бак полный, воды нет.", res: "от первого лица · ворота, угарный газ",
             water: 0, food: 1, charge: 50, kind: "garage", door: "gate", clock: "19:52", art: "garage", car: true, supply: "сторожка кооператива, там кулер",
-            flow: ["garageOpen", "prep", "night", "supply", "radio"] },
-  street: { diff: 5, name: "Остановка на Кирова", where: "проспект Кирова", place: "Остановка · пр. Кирова", sum: "Ждёшь троллейбус. Ничего с собой, кроме телефона.", res: "ничего нет · самый сложный старт",
+            flow: ["worldAction", "evacAction"], action: true },
+  street: { diff: 5, name: "Остановка на Кирова", where: "проспект Кирова", place: "Остановка · пр. Кирова", sum: "Ждёшь троллейбус. Ничего с собой, кроме телефона.", res: "от первого лица · бежать, домофон",
             water: 0, food: 0, charge: 25, kind: "street", door: "door", clock: "20:12", art: "street",
-            flow: ["streetOpen", "shelter", "night", "supply", "radio"] },
+            flow: ["worldAction", "evacAction"], action: true },
 };
 const POINTS = ["Аэропорт «Симферополь»", "Стадион «Локомотив»", "Ж/д вокзал", "Площадь Ленина"];
 
@@ -2293,6 +2293,1103 @@ const Flat = (() => {
   return { start, stop, _st: () => st, _act: id => act(id), _light: light, _keys: keys };
 })();
 
+// ---------- shared first-person engine for the newer locations ----------
+const World = (() => {
+  const isTouch = matchMedia("(pointer: coarse)").matches;
+  const EYE = 1.6, EYE_CROUCH = 0.62, R = 0.22;
+  let T = null, st = null, cfg = null, fin = null, raf = 0, last = 0, renderer, scene, cam, flash, hemi;
+  const objs = {};
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const wrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
+
+  // ---------- building helpers handed to each location ----------
+  const api = {
+    get T() { return T; }, get scene() { return scene; }, get st() { return st; }, get cam() { return cam; }, objs, rnd, lerp,
+    M: (c, o = {}) => new T.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.85, metalness: 0.03 }, o)),
+    box(w, h, d, mat, x, y, z, parent) { const m = new T.Mesh(new T.BoxGeometry(w, h, d), typeof mat === "number" ? api.M(mat) : mat); m.position.set(x, y, z); (parent || scene).add(m); return m; },
+    wallX(x0, x1, z, mat, h = 2.8, y0 = 0) { return api.box(Math.abs(x1 - x0), h, 0.12, mat, (x0 + x1) / 2, y0 + h / 2, z); },
+    wallZ(z0, z1, x, mat, h = 2.8, y0 = 0) { return api.box(0.12, h, Math.abs(z1 - z0), mat, x, y0 + h / 2, (z0 + z1) / 2); },
+    reg(id, obj) { obj.traverse(o => { o.userData.act = id; }); objs[id] = obj; return obj; },
+    ctex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); return new T.CanvasTexture(c); },
+    group(x = 0, y = 0, z = 0, parent) { const g = new T.Group(); g.position.set(x, y, z); (parent || scene).add(g); return g; },
+    glass(w, h, x, y, z, ry = 0) { const m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshStandardMaterial({ color: 0x9fc8e8, transparent: true, opacity: 0.16, depthWrite: false, side: T.DoubleSide })); m.position.set(x, y, z); m.rotation.y = ry; m.raycast = () => {}; scene.add(m); return m; },
+    sign(text, col, bg, w, h, x, y, z, ry = 0) { const t = api.ctex(256, 64, (c, W, H) => { c.fillStyle = bg; c.fillRect(0, 0, W, H); c.font = "bold 38px sans-serif"; c.textAlign = "center"; c.fillStyle = col; c.fillText(text, W / 2, 46); }); const m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({ map: t, transparent: true })); m.position.set(x, y, z); m.rotation.y = ry; scene.add(m); return m; },
+    shelf(x, z, len, depth, h, along, cols, n = 4) { // a free-standing rack; along = "x" or "z"
+      const g = api.group(x, 0, z), wood = api.M(0x5a4636), W = along === "x" ? len : depth, D = along === "x" ? depth : len;
+      for (const sd of [-1, 1]) api.box(along === "x" ? 0.03 : W, h, along === "x" ? D : 0.03, wood, along === "x" ? sd * len / 2 : 0, h / 2, along === "x" ? 0 : sd * len / 2, g);
+      for (let k = 0; k < n; k++) { const y = 0.15 + k * (h - 0.3) / (n - 1); api.box(W, 0.025, D, wood, 0, y, 0, g); const cnt = Math.floor(len / 0.12); for (let i = 0; i < cnt; i++) { const c = cols[(i + k) % cols.length], off = -len / 2 + 0.08 + i * 0.12; api.box(0.08, 0.13, 0.08, api.M(c), along === "x" ? off : rnd(-0.04, 0.04), y + 0.08, along === "x" ? rnd(-0.04, 0.04) : off, g); } }
+      return g;
+    },
+    street(zFront, opt = {}) { // sidewalk + road + far buildings in front of z = zFront (towards -z)
+      const sw = opt.sidewalk || 3, H = opt.drop || 0;
+      api.box(60, 0.1, sw, 0x3a3d44, 0, 0.05 - H, zFront - sw / 2); api.box(60, 0.14, 0.2, 0x60636a, 0, 0.07 - H, zFront - sw);
+      const road = new T.Mesh(new T.PlaneGeometry(90, 40), api.M(0x1c1f25)); road.rotation.x = -Math.PI / 2; road.position.set(0, -H, zFront - sw - 20); scene.add(road);
+      for (let i = -12; i <= 12; i++) api.box(1.5, 0.01, 0.12, 0xcfc39a, i * 3.5, 0.012 - H, zFront - sw - 5);
+      const winTex = api.ctex(64, 128, (c, w, h) => { c.fillStyle = "#000"; c.fillRect(0, 0, w, h); for (let y = 4; y < h; y += 12) for (let x = 4; x < w; x += 10) { c.fillStyle = Math.random() < 0.35 ? "#ffcf8a" : "#0c0f16"; c.fillRect(x, y, 6, 7); } });
+      for (let i = -4; i <= 4; i++) { const h = rnd(8, 18), b = api.box(8, h, 6, api.M(0x232836, { emissive: 0xffffff, emissiveMap: winTex, emissiveIntensity: 0.5 }), i * 9, h / 2 - H, zFront - sw - 22); b.material.map = winTex; }
+      const lamps = [];
+      for (const x of opt.lamps || [-6, 6]) { api.box(0.1, 4.2, 0.1, 0x3a3f48, x, 2.1 - H, zFront - sw + 0.3); const l = new T.PointLight(0xffc68a, 1.0, 15, 2); l.position.set(x, 4 - H, zFront - sw + 0.5); scene.add(l); lamps.push(l); }
+      return lamps;
+    },
+    person(col, zombie) {
+      const g = new T.Group(), mc = api.M(col), skin = api.M(zombie ? 0x8f9c78 : 0xd9b38c);
+      api.box(0.38, 0.62, 0.24, mc, 0, 1.12, 0, g);
+      const legL = api.box(0.15, 0.8, 0.18, 0x2a2d35, -0.09, 0.4, 0, g), legR = api.box(0.15, 0.8, 0.18, 0x2a2d35, 0.09, 0.4, 0, g);
+      const head = new T.Mesh(new T.SphereGeometry(0.13, 12, 10), skin); head.position.set(0, 1.58, 0); g.add(head);
+      const armL = new T.Group(), armR = new T.Group(); armL.position.set(-0.24, 1.38, 0); armR.position.set(0.24, 1.38, 0);
+      api.box(0.09, 0.58, 0.09, mc, 0, -0.29, 0, armL); api.box(0.09, 0.58, 0.09, mc, 0, -0.29, 0, armR); g.add(armL, armR);
+      if (zombie) { armL.rotation.x = -1.35; armR.rotation.x = -1.2; }
+      g.userData = { armL, armR, legL, legR, zombie }; scene.add(g); return g;
+    },
+    say(text) { if (!st) return; const el = $("aSay"); if (el) { el.innerHTML = text; el.classList.remove("fade"); void el.offsetWidth; el.classList.add("fade"); } },
+    noise(x, z, r) {
+      if (cfg.muffle) r *= cfg.muffle(st, x, z);
+      st.loud = Math.min(1.4, st.loud + r / 14);
+      for (const zb of st.zombies) if (!["chase", "script", "pen", "walkoff"].includes(zb.state) && !zb.human && Math.hypot(zb.x - x, zb.z - z) < r) { zb.state = "seek"; zb.tx = x + rnd(-0.4, 0.4); zb.tz = z + rnd(-0.4, 0.4); }
+      if (st.scratch && st.scratch.on) st.scratch.noise += r / 10;
+    },
+    spawnZ(x, z, extra = {}) { const zb = { x, z, state: "wander", tx: x, tz: z, ph: rnd(0, 6), perceive: 0, g: api.person(extra.col || 0x4a5a3a, !extra.human), ...extra }; zb.g.position.set(x, 0, z); st.zombies.push(zb); return zb; },
+    turn(zb) { const p = zb.g.position.clone(); scene.remove(zb.g); zb.g = api.person(0x4a5a3a, true); zb.g.position.copy(p); zb.human = false; zb.harmless = false; zb.state = "chase"; zb.speed = 1.1; },
+    removeZ(zb) { scene.remove(zb.g); st.zombies = st.zombies.filter(q => q !== zb); },
+    spawnCiv(x, z, tx, tz, v, col) { const c = { x, z, tx, tz, v, g: api.person(col || api.pickCol(), false), ph: rnd(0, 6) }; c.g.position.set(x, 0, z); st.civs.push(c); return c; },
+    pickCol: () => [0x6fa0d0, 0xb07a5a, 0x9a6ab0, 0x5aa080, 0xc0a050][Math.floor(Math.random() * 5)],
+    openGest, hideGest, beginInspect, die, tally: (v, t) => tally(v, t),
+    toNight() {
+      st.phase = "night"; st.nightT = st.t; hideGest(); hemi.intensity = cfg.nightHemi != null ? cfg.nightHemi : 0.15;
+      scene.background.set(0x07090f); if (scene.fog) scene.fog.color.set(0x07090f);
+      renderTop(1, 3, G.loc.place, "23:50", "Ночь");
+      if (cfg.onNight) cfg.onNight(st, api);
+    },
+    startScratch(text) { st.scratch = { on: true, t: 0, noise: 0 }; api.say(text || "Скрежет. Медленно, без остановки. <b>Не ходи и не трогай экран</b>, пока не уйдёт."); },
+    finish(res) { const f = fin; releaseAll(); stop(); f(res); },
+  };
+
+  // ---------- start / stop ----------
+  function start(config, g, done) {
+    cfg = config; fin = done; T = window.THREE;
+    for (const k in objs) delete objs[k];
+    const b = $("body");
+    if (!T) { b.innerHTML = `<div class="verdict"><p class="outcome">3D не загрузился. Можно продолжить историю в обычном режиме.</p><button class="btn" id="aSkip" type="button">Продолжить</button></div>`; $("aSkip").onclick = () => done({ tone: "mid", out: "Ночь прошла.", tips: [], r: { next: NEXT } }); return; }
+    const s0 = cfg.start;
+    st = { phase: "evening", t: 0, paused: true, x: s0.x, z: s0.z, eye: EYE, yaw: s0.yaw || 0, pitch: -0.05, crouch: false, sneak: false, sprint: false, mode: "look",
+      loud: 0, zombies: [], civs: [], scratch: null, inspect: null, dead: false, aim: null, stepT: 0, moving: false, easy: false, holding: false, v: {}, g };
+    b.innerHTML = `<div class="act">
+      <div class="say" id="aSay">${cfg.firstLine}</div>
+      <div class="stage" id="aStage">
+        <div class="gl" id="aGL"></div><div class="cross"></div>
+        <div class="steps" id="aSteps" hidden></div>
+        <button type="button" class="help" id="aHelp" title="Как играть">?</button>
+        <div class="aimtip" id="aAim" hidden></div><div class="tlabel" id="aLabel" hidden></div><div class="edgew" id="aEdge" hidden></div><div class="vign" id="aVig"></div>
+        <div class="joy" id="aJoy" ${isTouch ? "" : "hidden"}><i id="aKnob"></i></div>
+        <div class="rbtns" id="aBtns"><button type="button" class="rb act" id="bAct" disabled>Действие</button><button type="button" class="rb" id="bCrouch">Присесть</button><button type="button" class="rb" id="bSneak">${cfg.sprint ? "Бежать" : "Тихо"}</button></div>
+        <div class="gest" id="aGest" hidden></div>
+        <canvas class="insp" id="aInspCv" hidden></canvas>
+        <div class="ibtns" id="aInsp" hidden><button class="btn" id="aLet" type="button">Впустить</button><button class="btn red" id="aDeny" type="button">Не впускать</button></div>
+        <div class="intro" id="aIntro">
+          <b>Управление</b>
+          ${isTouch ? `<span><b class="k">Джойстик слева</b> — идти. <b class="k">Палец справа</b> — смотреть.</span><span><b class="k">«Действие»</b> — с тем, что под прицелом и рядом.</span>`
+            : `<span><b class="k">WASD</b> — идти, <b class="k">мышь с зажатой кнопкой</b> — смотреть.</span><span><b class="k">E</b> или клик — действие. <b class="k">C</b> — присесть, <b class="k">Shift</b> — ${cfg.sprint ? "бежать" : "тихо"}.</span>`}
+          <b>${cfg.howtoTitle || "Что делать — по шагам сверху экрана"}</b>
+          <ol class="howto">${cfg.howto.map(h => `<li>${h}</li>`).join("")}</ol>
+          <div class="modes" id="aModes"><button class="btn" id="aEasy" type="button">Обучение — без спешки</button><button class="btn red" id="aGo" type="button">Как в жизни</button></div>
+          <button class="btn" id="aBack" type="button" hidden>Вернуться в игру</button>
+        </div>
+      </div>
+      <div class="meter"><span>шум</span><span class="nbar"><i id="aLoud"></i></span><b id="aLoudT">тихо</b></div>
+      ${cfg.meter ? `<div class="meter"><span>${cfg.meter.label}</span><span class="nbar"><i id="aM2"></i></span><b id="aM2T"></b></div>` : ""}
+      <div class="step" id="aStep"></div>
+      <ul class="obj" id="aObj"></ul>
+    </div>`;
+    build();
+    bindInput();
+    const begin = easy => { st.easy = easy; $("aIntro").hidden = true; releaseAll(); st.paused = false; last = performance.now(); if (cfg.onBegin) cfg.onBegin(st, api); if (easy) api.say(cfg.easyLine || "Обучение: опасность придёт, только когда ты будешь готов. Делай по шагам сверху."); };
+    $("aGo").onclick = () => begin(false); $("aEasy").onclick = () => begin(true);
+    $("aHelp").onclick = e => { e.stopPropagation(); st.paused = true; releaseAll(); $("aIntro").hidden = false; $("aModes").hidden = true; $("aBack").hidden = false; };
+    $("aBack").onclick = () => { $("aIntro").hidden = true; st.paused = false; last = performance.now(); };
+    $("aLet").onclick = () => endInspect(true); $("aDeny").onclick = () => endInspect(false);
+    $("bAct").onclick = e => { e.stopPropagation(); if (st.aim) act(st.aim); };
+    $("bCrouch").onclick = e => { e.stopPropagation(); toggleCrouch(); };
+    $("bSneak").onclick = e => { e.stopPropagation(); if (cfg.sprint) st.sprint = !st.sprint; else st.sneak = !st.sneak; };
+    last = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+  }
+  function stop() { releaseAll(); cancelAnimationFrame(raf); raf = 0; if (renderer) { renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss(); renderer = null; } st = null; scene = null; }
+  function build() {
+    renderer = new T.WebGLRenderer({ antialias: true }); renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1)); $("aGL").appendChild(renderer.domElement);
+    scene = new T.Scene(); scene.background = new T.Color(cfg.sky || 0x141a28); scene.fog = new T.Fog(cfg.sky || 0x141a28, 14, 60);
+    cam = new T.PerspectiveCamera(72, 1, 0.04, 200); cam.rotation.order = "YXZ"; scene.add(cam);
+    hemi = new T.HemisphereLight(0x9aa6c0, 0x202024, cfg.hemi != null ? cfg.hemi : 0.45); scene.add(hemi);
+    flash = new T.SpotLight(0xfff0d8, 0, 9, 0.5, 0.5, 1.4); cam.add(flash); flash.position.set(0, -0.1, 0); flash.target.position.set(0, -0.2, -1); cam.add(flash.target);
+    cfg.build(api, st);
+  }
+  function toggleCrouch() { if (st.crouch && cfg.lowCeiling && cfg.lowCeiling(st)) { api.say("Над головой низко — сначала вылези."); return; } st.crouch = !st.crouch; }
+
+  // ---------- collision ----------
+  function collideBody(e, list, r) {
+    let hit = false;
+    for (const [x0, x1, z0, z1] of list) {
+      const nx = Math.max(x0, Math.min(x1, e.x)), nz = Math.max(z0, Math.min(z1, e.z)), dx = e.x - nx, dz = e.z - nz, d2 = dx * dx + dz * dz;
+      if (d2 >= r * r) continue; hit = true;
+      if (d2 === 0) { const l = e.x - x0, rr = x1 - e.x, t = e.z - z0, b = z1 - e.z, m = Math.min(l, rr, t, b); if (m === l) e.x = x0 - r; else if (m === rr) e.x = x1 + r; else if (m === t) e.z = z0 - r; else e.z = z1 + r; }
+      else { const d = Math.sqrt(d2); e.x = nx + dx / d * r; e.z = nz + dz / d * r; }
+    }
+    return hit;
+  }
+
+  // ---------- actions ----------
+  function verbOf(id) { const o = cfg.objects[id]; return o ? o.verb(st, api) : null; }
+  function act(id) {
+    if (!st || st.dead || st.mode !== "look" || st.inspect) return;
+    const o = cfg.objects[id]; if (!o || !o.verb(st, api)) return;
+    o.act(st, api);
+  }
+  function smartAim() { return cfg.smartAim ? cfg.smartAim(st, api) : null; }
+
+  // ---------- gestures: hold, or swipe in a direction ----------
+  let gest = null;
+  const GI = { hold: ["◎", "hold"], right: ["↻", "turn"], left: ["↺", "turnl"], down: ["↓", "down"], up: ["↑", "up"] };
+  function openGest(g) {
+    gest = g; st.mode = "gest"; st.stroke = 0; st.holding = false;
+    const [icon, cls] = GI[g.kind], el = $("aGest"); el.hidden = false;
+    el.innerHTML = `<div class="gicon ${cls}">${g.icon || icon}</div><div class="gtext">${g.text}<small>${isTouch ? "" : g.key || (g.kind === "hold" ? "или держи Пробел" : "или жми " + { right: "D", left: "A", down: "S", up: "W" }[g.kind] + " несколько раз")}</small></div><div class="pmeter"><i class="fill" id="aFill"></i></div><button class="btn ghost" id="aGestX" type="button">Отойти</button>`;
+    $("aGestX").onclick = e => { e.stopPropagation(); hideGest(); };
+  }
+  function hideGest() { if (!st) return; st.mode = "look"; st.holding = false; gest = null; const el = $("aGest"); if (el) el.hidden = true; }
+  function gestStep() { if (!gest) return; const g = gest; g.step(st, api); if (g.done(st)) { hideGest(); if (g.after) g.after(st, api); } }
+
+  // ---------- input ----------
+  const look = { id: null, x: 0, y: 0, t0: 0, moved: 0, mode: "look" }, joy = { id: null, cx: 0, cy: 0, dx: 0, dy: 0 }, keys = new Set();
+  let bound = false;
+  const light = { x: 300, y: 260 };
+  function bindInput() {
+    const stage = $("aStage");
+    stage.onpointerdown = e => {
+      if (!st || st.paused || e.target.closest("button") || e.target.closest(".intro")) return;
+      if (st.scratch && st.scratch.on) st.scratch.noise += 0.25;
+      try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+      if (st.inspect) { moveLight(e); look.id = e.pointerId; return; }
+      const r = stage.getBoundingClientRect();
+      if (isTouch && st.mode === "look" && e.clientX - r.left < r.width * 0.45 && e.clientY - r.top > r.height * 0.35 && joy.id == null) { joy.id = e.pointerId; const jb = $("aJoy").getBoundingClientRect(); joy.cx = jb.left + jb.width / 2; joy.cy = jb.top + jb.height / 2; joyMove(e); return; }
+      look.id = e.pointerId; look.x = e.clientX; look.y = e.clientY; look.t0 = performance.now(); look.moved = 0; look.mode = st.mode;
+      if (gest && gest.kind === "hold") st.holding = true;
+    };
+    stage.onpointermove = e => {
+      if (!st) return;
+      if (st.inspect && (e.pointerType === "mouse" || e.pointerId === look.id)) { moveLight(e); return; }
+      if (e.pointerId === joy.id) { joyMove(e); return; }
+      if (e.pointerId !== look.id) return;
+      const dx = e.clientX - look.x, dy = e.clientY - look.y; look.x = e.clientX; look.y = e.clientY; look.moved += Math.abs(dx) + Math.abs(dy);
+      if (st.scratch && st.scratch.on) st.scratch.noise += (Math.abs(dx) + Math.abs(dy)) * 0.004;
+      if (gest && gest.kind !== "hold") { const v = { right: dx, left: -dx, down: dy, up: -dy }[gest.kind]; st.stroke += v; if (st.stroke > 80) { st.stroke = 0; gestStep(); } return; }
+      if (st.mode !== "look") return;
+      st.yaw += dx * 0.006; st.pitch = Math.max(-1.25, Math.min(0.9, st.pitch + dy * 0.005));
+    };
+    stage.onpointerup = stage.onpointercancel = handleUp;
+    stage.onlostpointercapture = e => { if (e.pointerId === joy.id) resetJoy(); };
+    if (!bound) {
+      bound = true;
+      addEventListener("keydown", onKey); addEventListener("keyup", onKeyUp);
+      addEventListener("pointerup", e => { if (st) handleUp(e); }); addEventListener("pointercancel", e => { if (st) handleUp(e); });
+      addEventListener("touchend", e => { if (st && e.touches.length === 0) { resetJoy(); look.id = null; st.holding = false; } });
+      addEventListener("touchcancel", () => { if (st) { resetJoy(); look.id = null; st.holding = false; } });
+      addEventListener("blur", releaseAll); document.addEventListener("visibilitychange", releaseAll);
+    }
+  }
+  function handleUp(e) {
+    if (!st) return;
+    if (e.pointerId === joy.id) { resetJoy(); return; }
+    if (e.pointerId !== look.id) return;
+    look.id = null; st.holding = false; st.stroke = 0;
+    if (look.mode === "look" && st.mode === "look" && !st.inspect && look.moved < 10 && performance.now() - look.t0 < 450) pickAt(e.clientX, e.clientY);
+  }
+  function resetJoy() { joy.id = null; joy.dx = joy.dy = 0; const k = $("aKnob"); if (k) k.style.transform = ""; }
+  function releaseAll() { keys.clear(); resetJoy(); look.id = null; if (st) st.holding = false; }
+  function joyMove(e) { let dx = (e.clientX - joy.cx) / 45, dy = (e.clientY - joy.cy) / 45; const m = Math.hypot(dx, dy); if (m > 1) { dx /= m; dy /= m; } joy.dx = dx; joy.dy = dy; const k = $("aKnob"); if (k) k.style.transform = `translate(${dx * 32}px, ${dy * 32}px)`; }
+  function onKey(e) {
+    if (!st || st.paused) return;
+    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
+    if (st.scratch && st.scratch.on && !e.repeat) st.scratch.noise += 0.3;
+    keys.add(e.code); if (e.repeat) return;
+    if (gest) {
+      if (gest.kind === "hold" && (e.code === "Space" || e.code === "KeyE")) { st.holding = true; return; }
+      const map = { right: ["KeyD", "ArrowRight", "KeyE"], left: ["KeyA", "ArrowLeft", "KeyE"], down: ["KeyS", "ArrowDown", "KeyE"], up: ["KeyW", "ArrowUp", "KeyE"] }[gest.kind];
+      if (map && map.includes(e.code)) { gestStep(); return; }
+      if (e.code === "Escape") { hideGest(); return; }
+      return;
+    }
+    if (e.code === "KeyC") toggleCrouch();
+    if (e.code === "KeyE" && st.mode === "look" && st.aim) act(st.aim);
+  }
+  function onKeyUp(e) { if (!st) return; keys.delete(e.code); if (e.code === "Space" || e.code === "KeyE") st.holding = false; }
+  function raycastId(nx, ny, far) {
+    const rc = new T.Raycaster(); rc.setFromCamera(new T.Vector2(nx, ny), cam); rc.far = far;
+    for (const h of rc.intersectObjects(scene.children, true)) { const id = h.object.userData.act; if (id) return { id, d: h.distance }; if (h.distance > 0.05 && !h.object.userData.see) return null; }
+    return null;
+  }
+  function pickAt(cx, cy) {
+    const r = renderer.domElement.getBoundingClientRect();
+    let hit = raycastId(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1, 10);
+    const sm = smartAim(); if (sm) hit = { id: sm, d: 1 };
+    if (!hit) return;
+    const o = cfg.objects[hit.id];
+    if (hit.d > (o && o.reach || 2.0)) { api.say(`${o ? o.name : "Это"}: подойди ближе.`); return; }
+    act(hit.id);
+  }
+
+  // ---------- inspection (peephole / gap / window) ----------
+  const ZONES = [{ id: "hl", x: 190, y: 150 }, { id: "hr", x: 410, y: 150 }, { id: "al", x: 215, y: 250 }, { id: "ar", x: 385, y: 250 }, { id: "nk", x: 300, y: 300 }];
+  function moveLight(e) { const c = $("aInspCv").getBoundingClientRect(), s = Math.min(c.width / 600, c.height / 640), ox = (c.width - 600 * s) / 2, oy = (c.height - 640 * s) / 2; light.x = (e.clientX - c.left - ox) / s; light.y = (e.clientY - c.top - oy) / s; }
+  function beginInspect(o) {
+    hideGest(); st.inspect = { t: 0, max: o.max || 16, seen: {}, dwell: {}, bite: o.bitten ? pick(ZONES).id : null, frame: o.frame || "gap", onEnd: o.onEnd, who: o.who || "" };
+    $("aLet").textContent = o.yes || "Впустить"; $("aDeny").textContent = o.no || "Не впускать";
+    $("aInspCv").hidden = false; $("aInsp").hidden = false;
+    api.say(o.line || "«Покажи руки! Шею!» Веди пальцем: кисти, предплечья, шея.");
+  }
+  function endInspect(yes) {
+    const ins = st.inspect; if (!ins) return;
+    st.inspect = null; $("aInspCv").hidden = true; $("aInsp").hidden = true;
+    ins.onEnd(yes, { bite: ins.bite, seenBite: ins.bite && ins.seen[ins.bite], all: ZONES.every(z => ins.seen[z.id]), timeout: !!ins.timeout }, st, api);
+  }
+  function drawInspect() {
+    const c = $("aInspCv"), r = c.getBoundingClientRect(), D = Math.min(2, devicePixelRatio || 1);
+    if (c.width !== Math.round(r.width * D)) { c.width = Math.round(r.width * D); c.height = Math.round(r.height * D); }
+    const x = c.getContext("2d"), s = Math.min(r.width / 600, r.height / 640), ox = (r.width - 600 * s) / 2, oy = (r.height - 640 * s) / 2, ins = st.inspect;
+    x.setTransform(D, 0, 0, D, 0, 0); x.fillStyle = "#000"; x.fillRect(0, 0, r.width, r.height);
+    x.setTransform(D * s, 0, 0, D * s, D * ox, D * oy);
+    x.save();
+    if (ins.frame === "peep") { x.beginPath(); x.arc(300, 260, 250, 0, 7); x.clip(); } else { x.beginPath(); x.rect(20, 60, 560, 440); x.clip(); }
+    x.fillStyle = "#2e2a28"; x.fillRect(0, 0, 600, 640);
+    x.fillStyle = "#5c4f4a"; x.beginPath(); x.ellipse(300, 470, 150, 140, 0, 0, 7); x.fill();
+    x.fillStyle = "#c9a888"; x.fillRect(285, 280, 30, 40); x.beginPath(); x.arc(300, 230, 55, 0, 7); x.fill();
+    x.fillStyle = "#3a2a22"; x.beginPath(); x.arc(300, 215, 58, Math.PI, 0); x.fill();
+    x.strokeStyle = "#c9a888"; x.lineWidth = 30; x.lineCap = "round";
+    x.beginPath(); x.moveTo(190, 400); x.lineTo(215, 250); x.lineTo(190, 160); x.stroke(); x.beginPath(); x.moveTo(410, 400); x.lineTo(385, 250); x.lineTo(410, 160); x.stroke();
+    x.fillStyle = "#c9a888"; x.beginPath(); x.arc(190, 145, 22, 0, 7); x.arc(410, 145, 22, 0, 7); x.fill();
+    if (ins.bite) { const z = ZONES.find(q => q.id === ins.bite); x.fillStyle = "#e8e2d6"; x.fillRect(z.x - 20, z.y - 9, 40, 18); x.fillStyle = "#8a1d16"; x.beginPath(); x.arc(z.x, z.y, 6, 0, 7); x.fill(); }
+    x.fillStyle = "rgba(0,0,0,.75)"; x.beginPath(); x.rect(0, 0, 600, 640); x.arc(light.x, light.y, 85, 0, 7, true); x.fill("evenodd");
+    x.restore();
+    if (ins.frame === "peep") { x.strokeStyle = "#000"; x.lineWidth = 40; x.beginPath(); x.arc(300, 260, 270, 0, 7); x.stroke(); }
+    else { x.fillStyle = "#6f747c"; x.fillRect(20, 30, 560, 34); for (let i = 30; i < 64; i += 8) { x.fillStyle = "#555a62"; x.fillRect(20, i, 560, 3); } }
+    x.font = "14px 'PT Mono', monospace"; x.textAlign = "center";
+    for (const z of ZONES) { const seen = ins.seen[z.id], bad = seen && ins.bite === z.id; x.strokeStyle = !seen ? "rgba(241,176,63,.6)" : bad ? "#e5483b" : "#4fc685"; x.lineWidth = 3; x.beginPath(); x.arc(z.x, z.y, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, (ins.dwell[z.id] || 0) / 0.35)); x.stroke(); if (seen) { x.fillStyle = bad ? "#e5483b" : "#4fc685"; x.fillText(bad ? "УКУС" : "чисто", z.x, z.y - 38); } }
+    x.fillStyle = "#ece8de"; x.font = "16px 'PT Sans', sans-serif"; x.fillText(`${ins.who}Проверено: ${ZONES.filter(z => ins.seen[z.id]).length}/5 · веди пальцем`, 300, 535);
+    const k = ins.t / ins.max; x.fillStyle = "#1e232d"; x.fillRect(100, 555, 400, 10); x.fillStyle = "#e5483b"; x.fillRect(100, 555, 400 * (1 - k), 10);
+    x.fillStyle = "#8d94a3"; x.font = "12px 'PT Mono', monospace"; x.fillText("время уходит", 300, 585);
+  }
+
+  // ---------- death ----------
+  function die(cause, out, tip, end) {
+    if (st.dead) return; st.dead = true; hideGest();
+    tally("bad", cause);
+    $("aVig").style.background = "rgba(150,10,10,.55)";
+    setTimeout(() => api.finish({ tone: "bad", out, tips: [{ v: "bad", tip }], r: { end: end || "bitten" } }), 900);
+  }
+
+  // ---------- simulation ----------
+  function update(dt) {
+    st.t += dt;
+    let ix = 0, iz = 0;
+    if (st.mode === "look" && !st.inspect && !st.frozen) {
+      const f = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - joy.dy;
+      const s = (keys.has("KeyD") ? 1 : 0) - (keys.has("KeyA") ? 1 : 0) + joy.dx;
+      if (keys.has("ArrowLeft")) st.yaw += dt * 2; if (keys.has("ArrowRight")) st.yaw -= dt * 2;
+      ix = -Math.sin(st.yaw) * f + Math.cos(st.yaw) * s; iz = -Math.cos(st.yaw) * f - Math.sin(st.yaw) * s;
+    }
+    const m = Math.hypot(ix, iz); if (m > 1) { ix /= m; iz /= m; }
+    const shift = keys.has("ShiftLeft") || keys.has("ShiftRight");
+    const fast = cfg.sprint && (st.sprint || shift), quiet = !cfg.sprint && (st.sneak || shift);
+    const sp = st.crouch ? 0.7 : quiet ? 0.6 : fast ? 3.4 : 1.6;
+    st.moving = m > 0.1; st.x += ix * sp * dt; st.z += iz * sp * dt;
+    const hitFurn = collideBody(st, cfg.rects(st), R);
+    st.bumpCd = (st.bumpCd || 0) - dt;
+    if (cfg.bumpable && hitFurn && !st.touching && st.moving && !quiet && !st.crouch && st.bumpCd <= 0 && cfg.bumpable(st)) { st.bumpCd = 2.5; api.noise(st.x, st.z, 8); api.say(cfg.bumpLine || "Задел полку — что-то с грохотом падает на пол!"); }
+    st.touching = hitFurn;
+    st.stepT -= dt; if (st.moving && st.stepT <= 0) { st.stepT = fast ? 0.3 : 0.5; if (!quiet && !st.crouch) api.noise(st.x, st.z, fast ? 7 : 3); }
+    if (st.moving && st.scratch && st.scratch.on) st.scratch.noise += dt * (quiet || st.crouch ? 0.15 : 0.5);
+    st.eye += ((st.crouch ? EYE_CROUCH : EYE) - st.eye) * Math.min(1, dt * 8);
+    // gestures that are held
+    if (gest && gest.kind === "hold" && st.holding) { gest.hold(st, dt, api); if (gest && gest.done(st)) { const g = gest; hideGest(); if (g.after) g.after(st, api); } }
+    if (gest && gest.cancelIf && gest.cancelIf(st)) hideGest();
+    st.loud = Math.max(0, st.loud - dt * 0.5);
+    // inspection timer
+    if (st.inspect) {
+      const ins = st.inspect; ins.t += dt;
+      for (const z of ZONES) if (Math.hypot(light.x - z.x, light.y - z.y) < 45) { ins.dwell[z.id] = (ins.dwell[z.id] || 0) + dt; if (ins.dwell[z.id] > 0.35) ins.seen[z.id] = true; }
+      if (ins.t >= ins.max) { ins.timeout = true; endInspect(false); }
+    }
+    // scratch (stay silent)
+    if (st.scratch && st.scratch.on) {
+      const sc = st.scratch; sc.t += dt; sc.noise = Math.max(0, sc.noise - dt * 0.12);
+      if (sc.noise > 1 && !sc.failed) { sc.failed = true; G.stress += 30; api.say(cfg.scratchFail ? cfg.scratchFail(st) : "Скрежет обрывается — и начинаются удары. Потом второй. Третий."); }
+      if (sc.t > 16) { sc.on = false; sc.done = true; tally(sc.failed ? "bad" : "good", sc.failed ? "Шуметь, когда скребут" : "Замереть, пока скребут"); api.say(sc.failed ? "Под утро удары стихают." : "Скрежет стихает. Шаги уходят."); st.morningAt = st.t + 4; if (cfg.onScratchEnd) cfg.onScratchEnd(st, api); }
+    }
+    // the location's own script
+    cfg.update(st, dt, api);
+    if (!st || st.dead) return;
+    if (st.morningAt && st.t > st.morningAt && !st.zombies.some(z => z.inside)) { const res = cfg.finish(st, api); api.finish(res); return; }
+    // civilians
+    for (const c of st.civs) { const dx = c.tx - c.x, dz = c.tz - c.z, d = Math.hypot(dx, dz); if (d > 0.1) { c.x += dx / d * c.v * dt; c.z += dz / d * c.v * dt; c.g.rotation.y = Math.atan2(dx, dz); c.ph += dt * c.v * 4; } else c.gone = true; c.g.position.set(c.x, 0, c.z); const u = c.g.userData; u.legL.rotation.x = Math.sin(c.ph) * 0.6; u.legR.rotation.x = -Math.sin(c.ph) * 0.6;
+      const pd = Math.hypot(c.x - st.x, c.z - st.z); if (pd < 0.45 && pd > 0.01) { st.x += (st.x - c.x) / pd * 0.08; st.z += (st.z - c.z) / pd * 0.08; if (!st.shoveSaid) { st.shoveSaid = true; api.say("Тебя толкают — толпа несётся к выходу."); } } }
+    for (const c of st.civs) if (c.gone) scene.remove(c.g);
+    st.civs = st.civs.filter(c => !c.gone);
+    // zombies
+    let danger = 0, warnTxt = null;
+    const zr = cfg.rectsZ ? cfg.rectsZ(st) : cfg.rects(st);
+    for (const z of st.zombies) {
+      z.perceive -= dt;
+      const d = Math.hypot(z.x - st.x, z.z - st.z);
+      if (z.state !== "script" && z.state !== "scratch" && z.perceive <= 0) {
+        z.perceive = 0.25;
+        if (cfg.sees(st, z, d, api)) z.state = "chase";
+        else if (z.state === "chase") { z.state = "seek"; z.tx = st.x; z.tz = st.z; }
+      }
+      if (z.state === "chase") { z.tx = st.x; z.tz = st.z; }
+      if (z.state === "seek" && Math.hypot(z.x - z.tx, z.z - z.tz) < 0.3) { z.state = "wander"; z.tx = z.x + rnd(-3, 3); z.tz = z.z + rnd(-3, 3); }
+      if (z.state === "wander" && Math.random() < dt * 0.2) { z.tx = z.x + rnd(-3, 3); z.tz = z.z + rnd(-3, 3); }
+      const zs = z.speed || (z.state === "chase" ? 1.3 : z.state === "seek" ? 0.85 : z.state === "scratch" ? 0.15 : 0.4);
+      const dx = z.tx - z.x, dz = z.tz - z.z, dl = Math.hypot(dx, dz);
+      if (dl > 0.05) { z.x += dx / dl * zs * dt; z.z += dz / dl * zs * dt; z.g.rotation.y = Math.atan2(dx, dz); z.ph += dt * zs * 4; }
+      if (!z.noClip) collideBody(z, zr, 0.22);
+      if (cfg.zClamp) cfg.zClamp(st, z);
+      z.g.position.set(z.x, Math.abs(Math.sin(z.ph)) * 0.04, z.z);
+      const u = z.g.userData; u.legL.rotation.x = Math.sin(z.ph) * 0.4; u.legR.rotation.x = -Math.sin(z.ph) * 0.4; if (!z.human) { u.armL.rotation.x = -1.35 + Math.sin(z.ph * 0.7) * 0.15; u.armR.rotation.x = -1.2 - Math.sin(z.ph * 0.7) * 0.15; }
+      if (cfg.zombieTick) cfg.zombieTick(st, z, dt, api);
+      if (!st || st.dead) return;
+      if ((z.state === "chase" || z.state === "seek") && d < 7) {
+        danger = Math.max(danger, 1 - d / 7);
+        const fwd = Math.atan2(-Math.sin(st.yaw), -Math.cos(st.yaw)), ang = wrap(Math.atan2(z.x - st.x, z.z - st.z) - fwd);
+        if (Math.abs(ang) > 0.65 && (!warnTxt || d < warnTxt.d)) warnTxt = { d, side: Math.abs(ang) > 2.2 ? "back" : ang < 0 ? "right" : "left" };
+      }
+      if (d < 0.45 && !z.harmless) { const c = z.boxTrap ? { cause: "Впустить укушенного", out: "Он между тобой и дверью. Здесь некуда деться.", tip: "Проверяй руки и шею у всех. Укушенный обращается за минуты, а в тесном помещении спрятаться негде.", end: "box" } : cfg.touch ? cfg.touch(st, z) : null; die(c ? c.cause : "Подпустить слишком близко", c ? c.out : "Холодные пальцы смыкаются на твоём запястье.", c ? c.tip : "Любое касание — укус. Держи дистанцию.", c && c.end); return; }
+    }
+    for (const z of st.zombies) if (z.gone) scene.remove(z.g);
+    st.zombies = st.zombies.filter(z => !z.gone);
+    st.danger = danger; st.warnTxt = warnTxt;
+  }
+
+  // ---------- render & HUD ----------
+  function render(now) {
+    const host = $("aGL"); if (!host) return;
+    const w = host.clientWidth, h = host.clientHeight;
+    if (renderer.domElement.width !== Math.round(w * renderer.getPixelRatio()) || renderer.domElement.height !== Math.round(h * renderer.getPixelRatio())) { renderer.setSize(w, h, false); cam.aspect = w / h; cam.fov = Math.max(70, Math.min(96, 2 * Math.atan(Math.tan(36 * Math.PI / 180) / cam.aspect) * 180 / Math.PI)); cam.updateProjectionMatrix(); }
+    cam.position.set(st.x, st.eye + (cfg.eyeOffset ? cfg.eyeOffset(st) : 0), st.z); cam.rotation.set(st.pitch, st.yaw, 0);
+    flash.intensity = cfg.flash ? cfg.flash(st) : (st.phase === "night" ? 1.2 : 0);
+    if (cfg.render) cfg.render(st, now, api);
+    const goal = cfg.goal(st, api);
+    for (const [k, mm] of Object.entries(objs)) { const on = goal && goal.obj === k && st.mode === "look"; mm.traverse(o => { if (o.material && o.material.emissive && !o.userData.keepE) { if (o.userData.baseE === undefined) { o.userData.baseE = o.material.emissive.getHex(); o.userData.baseI = o.material.emissiveIntensity; } o.material.emissive.setHex(on ? 0xf1b03f : o.userData.baseE); o.material.emissiveIntensity = on ? 0.35 + 0.35 * Math.sin(now / 160) : o.userData.baseI; } }); }
+    renderer.render(scene, cam);
+    const hit = st.mode === "look" && !st.inspect ? raycastId(0, 0, 2.2) : null;
+    st.aim = smartAim() || (hit && hit.d <= ((cfg.objects[hit.id] || {}).reach || 2.0) && verbOf(hit.id) ? hit.id : null);
+    const aimEl = $("aAim"), ab = $("bAct"), vb = st.aim && verbOf(st.aim);
+    if (st.aim && vb) { aimEl.hidden = false; const t = `${isTouch ? "" : "E · "}${cfg.objects[st.aim].name}: ${vb}`; if (aimEl.textContent !== t) aimEl.textContent = t; ab.disabled = false; ab.textContent = vb.length > 16 ? cfg.objects[st.aim].name : vb[0].toUpperCase() + vb.slice(1); }
+    else { aimEl.hidden = true; ab.disabled = true; ab.textContent = "Действие"; }
+    const lab = $("aLabel");
+    if (goal && (goal.obj || goal.at) && st.mode === "look" && !st.inspect) {
+      const wp = new T.Vector3(); if (goal.at) wp.set(...goal.at); else { objs[goal.obj].getWorldPosition(wp); if (goal.y != null) wp.y = goal.y; }
+      const v = wp.clone().project(cam), off = v.z > 1 || Math.abs(v.x) > 0.95 || Math.abs(v.y) > 0.95; lab.hidden = false;
+      if (off) { const fwd = Math.atan2(-Math.sin(st.yaw), -Math.cos(st.yaw)); const ang = wrap(Math.atan2(wp.x - st.x, wp.z - st.z) - fwd); lab.className = "tlabel edge " + (ang < 0 ? "r" : "l"); lab.style.left = ""; lab.style.top = ""; lab.innerHTML = (ang < 0 ? "" : "← ") + "повернись: " + goal.short + (ang < 0 ? " →" : ""); }
+      else { lab.className = "tlabel"; lab.style.left = ((v.x + 1) / 2 * w) + "px"; lab.style.top = ((1 - v.y) / 2 * h) + "px"; lab.innerHTML = goal.short; }
+    } else lab.hidden = true;
+    const ew = $("aEdge");
+    if (st.warnTxt && !st.inspect) { ew.hidden = false; ew.className = "edgew " + st.warnTxt.side; ew.textContent = st.warnTxt.side === "back" ? "↓ шаги сзади!" : st.warnTxt.side === "left" ? "← шаги слева" : "шаги справа →"; } else ew.hidden = true;
+    $("aVig").style.boxShadow = st.danger > 0 ? `inset 0 0 ${40 + st.danger * 80}px rgba(200,20,20,${0.3 + st.danger * 0.5})` : (cfg.vignette ? cfg.vignette(st) : "none");
+    const fl = $("aFill"); if (fl && gest) fl.style.width = Math.min(100, gest.progress(st) * 100) + "%";
+    if (st.inspect) drawInspect();
+  }
+  function hud() {
+    const L = Math.min(1, st.loud), li = $("aLoud"); li.style.width = (L * 100).toFixed(0) + "%"; li.style.background = L > 0.66 ? "var(--alarm)" : L > 0.25 ? "var(--warn)" : "var(--ok)";
+    const lt = st.scratch && st.scratch.on ? (st.scratch.noise > 0.5 ? "оно прислушивается" : "замри") : L > 0.66 ? "грохот" : L > 0.25 ? "слышно" : "тихо"; if ($("aLoudT").textContent !== lt) $("aLoudT").textContent = lt;
+    if (cfg.meter) { const v = Math.max(0, Math.min(1, cfg.meter.value(st))), el = $("aM2"); el.style.width = (v * 100).toFixed(0) + "%"; el.style.background = cfg.meter.color ? cfg.meter.color(v) : "#4f9fd8"; const t = cfg.meter.text(st); if ($("aM2T").textContent !== t) $("aM2T").textContent = t; }
+    if (Math.floor(st.t) !== st.resT) { st.resT = Math.floor(st.t); if (cfg.liveRes) cfg.liveRes(st); renderRes(); }
+    const goal = cfg.goal(st, api), sb = $("aSteps");
+    if (goal && !st.inspect) { sb.hidden = false; const t = `<b>${goal.n ? `Шаг ${goal.n} из ${goal.total}` : "Сейчас"}</b> ${goal.text}`; if (sb.innerHTML !== t) sb.innerHTML = t; } else sb.hidden = true;
+    const step = st.inspect ? "Веди пальцем по кистям, предплечьям и шее. Потом реши." : st.scratch && st.scratch.on ? "Не ходи и не трогай экран." : goal ? "Сейчас: " + goal.text : st.phase === "evening" ? "Главное сделано. Скоро ночь." : "Жди. Слушай.";
+    const se = $("aStep"); if (se.textContent !== step) se.textContent = step;
+    const html = cfg.objectives(st).map(([ok, t]) => `<li class="${ok ? "ok" : ""}">${t}</li>`).join(""); const ob = $("aObj"); if (ob.innerHTML !== html) ob.innerHTML = html;
+    const bc = $("bCrouch"); bc.classList.toggle("on", st.crouch); bc.classList.toggle("glow", !!(goal && goal.crouch && !st.crouch)); bc.textContent = st.crouch ? "Встать" : "Присесть";
+    const bs = $("bSneak"); bs.classList.toggle("on", cfg.sprint ? st.sprint : st.sneak); bs.classList.toggle("glow", !!(goal && goal.sprint && !st.sprint));
+    $("aBtns").hidden = st.mode !== "look" || !!st.inspect;
+  }
+  function loop(now) {
+    if (!st) return; raf = requestAnimationFrame(loop);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!st.paused && !st.dead) update(dt);
+    if (!st) return; render(now); hud();
+  }
+  return { start, stop, _st: () => st, _act: id => act(id), _light: light, _keys: keys, _gest: () => gest, _objs: objs };
+})();
+
+// ---------- locations for the shared engine ----------
+const LOC3D = {};
+const COLS = [0xe8417a, 0x38c6d9, 0xf2c14e, 0x7cdd6a, 0xa070ff, 0xff8a3d, 0xffffff];
+const inRect = (st, x0, x1, z0, z1) => st.x > x0 && st.x < x1 && st.z > z0 && st.z < z1;
+
+// ===== Pharmacy on Pushkinskaya: you are the pharmacist =====
+LOC3D.pharm = {
+  firstLine: "20:58. Аптека на Пушкинской, вечерняя смена. Ты за прилавком.",
+  start: { x: -0.4, z: 2.45, yaw: 0 },
+  sky: 0x161c2a, hemi: 0.5,
+  howto: [
+    "Закрой входную дверь («Действие» на двери) и запри замок — проведи пальцем вправо.",
+    "Задвинь решётку за дверью: проводи пальцем вправо, она тяжёлая.",
+    "Раненых не трогай. Лекарства — только через прилавок или ночное окошко с лотком.",
+    "Собери аптечку с полок за прилавком (держи «Действие»).",
+    "В подсобке: набери воду из крана (держи), возьми обед коллеги из холодильника.",
+    "Выключи свет и вывеску — выключатель у двери в подсобку.",
+  ],
+  meter: { label: "напор", value: st => st.v.pressure, text: st => `${Math.round(st.v.water)} л`, color: v => v > 0.5 ? "#4f9fd8" : v > 0.15 ? "var(--warn)" : "var(--alarm)" },
+  build(a, st) {
+    const v = st.v; Object.assign(v, { door: "open", doorAng: 1, locked: false, grille: 0, lights: true, meds: 0, water: 0, pressure: 1, food: false, gave: false, bdoor: "open", bdoorAng: 1 });
+    const wall = a.M(0xd8dccf), dark = a.M(0x3e4a44), floorT = a.ctex(64, 64, (c) => { for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { c.fillStyle = (x + y) % 2 ? "#cfd3cc" : "#bfc4bc"; c.fillRect(x * 16, y * 16, 16, 16); } });
+    floorT.wrapS = floorT.wrapT = a.T.RepeatWrapping; floorT.repeat.set(5, 6);
+    a.box(5.2, 0.02, 5.8, a.M(0xffffff, { map: floorT }), 0, 0, 2.8); a.box(5.2, 0.02, 5.8, 0xeeeeea, 0, 2.8, 2.8);
+    a.wallZ(0, 5.6, -2.6, wall); a.wallZ(0, 5.6, 2.6, wall); a.wallX(-2.6, 2.6, 5.6, wall);
+    a.wallX(-2.6, -0.5, 3.1, wall); a.wallX(0.5, 2.6, 3.1, wall); a.box(1.0, 0.7, 0.12, wall, 0, 2.45, 3.1);
+    // front: glass, door, a solid stretch with the night window
+    a.box(5.2, 0.5, 0.12, dark, 0, 2.55, -0.06); a.box(2.0, 0.4, 0.12, dark, -1.6, 0.2, -0.06);
+    a.glass(2.0, 1.9, -1.6, 1.35, -0.06); a.box(1.3, 2.3, 0.12, dark, 1.95, 1.15, -0.06); a.box(0.3, 2.3, 0.12, dark, 0.75, 1.15, -0.06);
+    a.box(0.5, 0.32, 0.02, 0x222222, 1.6, 1.15, 0.01); // night window hatch
+    a.reg("tray", a.box(0.45, 0.06, 0.3, 0xb0b8c0, 1.6, 1.0, 0.2, undefined));
+    a.objs.tray.material.metalness = 0.6;
+    v.doorG = a.group(-0.6, 0, -0.06); a.box(1.2, 2.3, 0.05, a.M(0x9fc8e8, { transparent: true, opacity: 0.3 }), 0.6, 1.15, 0, v.doorG); a.box(0.04, 0.3, 0.06, 0xb0b0b0, 1.05, 1.1, 0.05, v.doorG); a.reg("door", v.doorG);
+    v.lockG = a.group(1.05, 1.0, 0.06, v.doorG); a.box(0.06, 0.06, 0.03, 0xd8c070, 0, 0, 0, v.lockG); a.reg("lock", v.lockG);
+    v.grilleG = a.group(-1.4, 0, 0.14); for (let i = 0; i < 9; i++) a.box(0.02, 2.2, 0.02, 0x666a70, -0.6 + i * 0.15, 1.1, 0, v.grilleG); a.box(1.3, 0.03, 0.03, 0x666a70, 0, 2.2, 0, v.grilleG); a.box(1.3, 0.03, 0.03, 0x666a70, 0, 0.05, 0, v.grilleG); a.reg("grille", v.grilleG);
+    v.sign = a.sign("✚ АПТЕКА", "#3fe07a", "#0d1a12", 1.8, 0.45, 0, 2.55, -0.14, Math.PI);
+    // counter and med shelves
+    a.box(3.5, 1.0, 0.4, a.M(0xe6e2d6), -0.75, 0.5, 1.9); a.box(3.5, 0.04, 0.45, 0x8a9a90, -0.75, 1.02, 1.9);
+    a.reg("meds", a.shelf(-1.5, 2.85, 1.8, 0.3, 2.0, "x", [0xffffff, 0x3fa0e0, 0xe04040, 0x40c070]));
+    a.shelf(1.6, 2.85, 1.6, 0.3, 2.0, "x", [0xffffff, 0xf0c040, 0x9060d0]);
+    // back room: sink, fridge, shelves, back-room door
+    a.box(0.7, 0.9, 0.6, 0xdddddd, 2.2, 0.45, 5.2); a.box(0.04, 0.28, 0.04, a.M(0xcfd5da, { metalness: 0.8 }), 2.2, 1.05, 5.45);
+    a.reg("sink", a.box(0.5, 0.06, 0.4, a.M(0x9aa2a8, { metalness: 0.7 }), 2.2, 0.92, 5.2));
+    a.reg("fridge", a.box(0.6, 1.4, 0.6, 0xf2f2f2, -2.2, 0.7, 5.2));
+    a.shelf(-2.3, 4.0, 1.2, 0.35, 1.9, "z", [0xc8b080, 0xb0a070]);
+    v.bdoorG = a.group(-0.5, 0, 3.1); a.box(1.0, 2.1, 0.05, 0x8a7a64, 0.5, 1.05, 0, v.bdoorG); a.reg("bdoor", v.bdoorG);
+    a.reg("switch", a.box(0.08, 0.12, 0.03, 0xf0f0f0, -0.75, 1.3, 3.03));
+    v.lamp = new a.T.PointLight(0xf4fff4, 1.3, 9, 2); v.lamp.position.set(0, 2.5, 1.6); a.scene.add(v.lamp);
+    v.lamp2 = new a.T.PointLight(0xf4fff4, 0.9, 6, 2); v.lamp2.position.set(0, 2.5, 4.4); a.scene.add(v.lamp2);
+    v.lamps = a.street(0, { sidewalk: 3 });
+  },
+  rects(st) {
+    const v = st.v, L = [[-2.8, -0.6, -0.14, 0], [0.6, 2.8, -0.14, 0], [-2.8, -2.6, 0, 5.8], [2.6, 2.8, 0, 5.8], [-2.8, 2.8, 5.6, 5.8],
+      [-2.8, -0.5, 3.05, 3.15], [0.5, 2.8, 3.05, 3.15], [-2.5, 1.0, 1.7, 2.1], [-2.4, 0.4, 2.7, 3.0], [0.8, 2.4, 2.7, 3.0],
+      [1.85, 2.6, 4.9, 5.6], [-2.6, -1.9, 4.9, 5.6], [-2.5, -2.1, 3.4, 4.6], [-12, 12, -9, -8.9], [-12, -11.9, -9, 0], [11.9, 12, -9, 0]];
+    if (v.door !== "open") L.push([-0.6, 0.6, -0.14, 0]);
+    if (v.grille >= 0.95) L.push([-0.7, 0.7, 0.1, 0.18]);
+    if (v.bdoor !== "open") L.push([-0.5, 0.5, 3.05, 3.15]);
+    return L;
+  },
+  muffle: (st, x, z) => (z > 0 && st.v.door !== "open" ? 0.5 : 1),
+  objects: {
+    door: { name: "Входная дверь", verb: st => st.v.locked ? (st.v.grille > 0.05 ? null : "заперто") : st.v.door === "open" ? "закрыть" : "открыть",
+      act(st, a) { const v = st.v; if (v.locked) return; v.door = v.door === "open" ? "closed" : "open"; a.noise(0, 0, 2); a.say(v.door === "closed" ? "Дверь закрыта. Теперь замок: «Действие» и проведи вправо." : "Дверь открыта."); } },
+    lock: { name: "Замок", verb: st => st.z < 0 ? null : st.v.door === "open" ? null : st.v.grille > 0.05 ? null : st.v.locked ? "отпереть" : "запереть",
+      act(st, a) { const v = st.v, to = !v.locked; a.openGest({ kind: to ? "right" : "left", text: to ? "Поверни ключ: <b>проведи пальцем вправо</b> — два оборота." : "Ключ обратно: <b>проведи влево</b>.", n: 0, step: s => { s.v.kt = (s.v.kt || 0) + 1; a.noise(0, 0.2, 0.6); }, done: s => s.v.kt >= 2, progress: s => (s.v.kt || 0) / 2, after: s => { s.v.kt = 0; s.v.locked = to; a.say(to ? "Заперто. Теперь задвинь решётку — она слева от двери." : "Отперто."); if (to) a.tally("good", "Запереть дверь аптеки"); } }); } },
+    grille: { name: "Решётка", verb: st => st.z > 0 && st.v.grille < 1 ? (st.v.door === "open" ? "сначала закрой дверь" : "задвинуть") : null,
+      act(st, a) { if (st.v.door === "open") { a.say("Сначала закрой дверь."); return; } a.openGest({ kind: "right", text: "Тяни решётку вправо: <b>проводи пальцем вправо</b>, раз за разом. Она гремит.", step: s => { s.v.grille = Math.min(1, s.v.grille + 0.2); a.noise(0, 0.2, 4); }, done: s => s.v.grille >= 1, progress: s => s.v.grille, after: s => { a.say("Решётка задвинута и защёлкнута. Дверь теперь не выдавить."); a.tally("good", "Задвинуть решётку"); } }); } },
+    meds: { name: "Полки с лекарствами", verb: st => st.v.meds >= 1 ? null : "собрать аптечку (держи)",
+      act(st, a) { a.openGest({ kind: "hold", text: "Собираешь: бинты, антисептик, обезболивающее, регидрон. <b>Держи палец на экране.</b>", hold: (s, dt) => { s.v.meds = Math.min(1, s.v.meds + dt / 3); }, done: s => s.v.meds >= 1, progress: s => s.v.meds, after: s => { a.say("Аптечка собрана. Она пригодится тебе — и как плата за помощь."); a.tally("good", "Собрать аптечку"); } }); } },
+    sink: { name: "Раковина", reach: 1.6, verb: st => st.v.pressure <= 0 ? "воды нет" : st.v.water >= 20 ? null : "набрать воду в бутылки (держи)",
+      act(st, a) { if (st.v.pressure <= 0) { a.say("Кран шипит. Напор пропал."); return; } a.openGest({ kind: "hold", text: "Набираешь воду в пустые бутылки из-под дистиллята. <b>Держи палец на экране.</b>", hold: (s, dt) => { s.v.water = Math.min(20, s.v.water + dt * 1.6 * s.v.pressure); }, done: s => s.v.water >= 20 || s.v.pressure <= 0, progress: s => s.v.water / 20, after: s => a.say(s.v.water >= 20 ? "20 литров в бутылках." : "Напор пропал.") }); } },
+    fridge: { name: "Холодильник", verb: st => st.v.food ? null : "взять обед коллеги",
+      act(st, a) { st.v.food = true; a.say("Контейнер с гречкой, два йогурта и бутерброды. Наташа простит."); } },
+    bdoor: { name: "Дверь в подсобку", verb: st => st.v.bdoor === "open" ? "закрыть" : "открыть",
+      act(st, a) { st.v.bdoor = st.v.bdoor === "open" ? "closed" : "open"; a.noise(0, 3.1, 1); } },
+    switch: { name: "Выключатель", verb: st => st.v.lights ? "выключить свет и вывеску" : "включить свет",
+      act(st, a) { st.v.lights = !st.v.lights; a.say(st.v.lights ? "Свет включён." : "Темно. Зелёный крест над входом гаснет."); } },
+    tray: { name: "Ночное окошко", reach: 1.6, verb: st => st.v.man && st.v.man.atWindow && !st.v.gave ? "положить бинты в лоток" : st.v.night2 && st.v.night2.on ? "посмотреть в окошко" : null,
+      act(st, a) {
+        const v = st.v;
+        if (v.night2 && v.night2.on) { v.night2.on = false; a.beginInspect({ frame: "gap", bitten: G.guestBitten, who: "Женщина у окошка. ", line: "«Покажите руки!» — она подносит руки к окошку. Веди пальцем: кисти, предплечья, шея.", yes: "Дать лекарство через лоток", no: "Закрыть окошко", onEnd: (yes, r, s) => { a.tally(yes ? "good" : "mid", yes ? "Помочь через лоток, без контакта" : "Не помогать ночью"); a.say(yes ? "Жаропонижающее и регидрон — в лоток. Лоток выдвигается наружу, руки не встречаются. «Спасибо!»" : "Ты закрываешь окошко. Шаги удаляются."); s.v.scratchAt = s.t + 6; } }); return; }
+        v.gave = true; a.tally("good", "Отдать бинты через ночное окошко, не касаясь"); a.say("Бинты и перекись — в лоток, лоток наружу. Он хватает пакет и уходит, шатаясь. Ты к нему не прикоснулся.");
+        v.man.state = "script"; v.man.tx = -9; v.man.tz = -4; v.man.leaving = true;
+      } },
+    man: { name: "Мужчина с рукой в крови", reach: 2.2, verb: st => st.v.man && st.v.man.inside && !st.v.man.leaving && !st.v.manTurned ? "положить бинты на прилавок" : null,
+      act(st, a) { const m = st.v.man; m.leaving = true; m.tx = -0.2; m.tz = -5; a.tally("good", "Отдать бинты через прилавок, не касаясь"); a.say("Ты кладёшь пакет на дальний край прилавка и отступаешь. Он берёт и уходит. Теперь закрывай дверь."); } },
+  },
+  smartAim(st) {
+    const v = st.v;
+    if (v.man && v.man.atWindow && !v.gave && inRect(st, 0.9, 2.5, 0, 1.6)) return "tray";
+    if (v.night2 && v.night2.on && inRect(st, 0.9, 2.5, 0, 1.6)) return "tray";
+    if (v.man && v.man.inside && !v.man.leaving && !v.manTurned && st.z > 2.1 && Math.hypot(st.x - v.man.x, st.z - v.man.z) < 2.4) return "man";
+    if (inRect(st, -1.3, 1.3, 0, 1.4)) { if (v.door === "open" && !v.locked) return "door"; if (!v.locked) return "lock"; if (v.grille < 1) return "grille"; }
+    return null;
+  },
+  sees(st, z, d) { if (z.human) return false; if (st.z > 0 && z.z < 0) return st.v.door === "open" || st.v.grille < 0.95 ? d < (st.v.lights ? 12 : 3) : d < (st.v.lights ? 6 : 2); return d < 8; },
+  zombieTick(st, z) {
+    const v = st.v;
+    if (z === v.man && z.state === "script") return;
+    if (z.z < 0 && st.z > 0 && (v.door !== "open" || v.grille >= 0.95)) { z.tx = Math.max(-2.4, Math.min(2.4, z.tx)); z.tz = Math.min(z.tz, -0.4); }
+    if (z.z > 0 && z.z < 1.7 && st.z > 2.1) { z.tx = 1.75; z.tz = 1.9; }
+    if (z.z > 0 && z.z < 3.05 && st.z > 3.15) { z.tx = 0; z.tz = 3.4; }
+  },
+  touch: st => ({ cause: "Подпустить заражённого к себе", out: st.v.manTurned ? "Тот самый «укус собаки». Он перегибается через прилавок, и его пальцы смыкаются на твоём запястье." : "Холодные пальцы смыкаются на твоём запястье.", tip: "Раненый в первые часы — главный риск. Лекарства — через прилавок или лоток, дверь — на замок до того, как он войдёт." }),
+  update(st, dt, a) {
+    const v = st.v;
+    v.pressure = Math.max(0, 1 - st.t / (st.easy ? 240 : 140));
+    for (const l of v.lamps) l.intensity = st.phase === "night" ? 0 : 1;
+    if (st.phase === "evening") {
+      if (!v.s1 && st.t > 4) { v.s1 = true; a.say("Телефон: «Симферополь: нападения на людей. Не открывайте двери незнакомым». На Пушкинской кто-то кричит."); }
+      if (!v.man && st.t > (st.easy ? 14 : 10)) { v.man = a.spawnZ(-7, -3, { human: true, harmless: true, state: "script", col: 0x6a7a8a, speed: 0.8, tx: 0, tz: -0.7 }); a.say("По тротуару к аптеке идёт мужчина, рука замотана футболкой. Он шатается."); }
+      const m = v.man;
+      if (m && !v.manTurned) {
+        const doorOpen = v.door === "open" && v.grille < 0.5;
+        if (!m.leaving && !m.inside && m.z > -0.9 && Math.abs(m.x) < 0.7) {
+          if (doorOpen) { m.inside = true; m.tx = 0.2; m.tz = 1.35; a.say("Он входит: «Бинты, перекись, обезболивающее. Собака укусила». Лоб в поту, губы серые. Не подходи — положи пакет на прилавок."); }
+          else if (!m.atWindow) { m.atWindow = true; m.tx = 1.6; m.tz = -0.6; a.say("Дверь закрыта. Он стучит в стекло, потом идёт к ночному окошку: «Хоть бинты дайте!» Подойди к окошку."); }
+        }
+        if ((m.inside || m.atWindow) && !m.leaving) { m.wait = (m.wait || 0) + dt; if (m.wait > (st.easy ? 40 : 22)) { v.manTurned = true; a.turn(m); a.say(m.inside ? "Он вдруг замирает, потом медленно поворачивает голову. Это уже не он. Беги в подсобку и закрой дверь!" : "За окошком хрип. Он бьётся в стекло — уже не человек."); if (!m.inside) { m.state = "wander"; } } }
+        if (m.leaving && m.z < -4) { a.removeZ(m); v.man = null; v.manGone = true; }
+      }
+      if (!st.easy && st.t > 45) { v.spawnT = (v.spawnT || 0) - dt; if (v.spawnT <= 0 && st.zombies.length < 5) { v.spawnT = 14; a.spawnZ(Math.random() < 0.5 ? -11 : 11, -a.rnd(2, 6), { tx: 0, tz: -2 }); } }
+      if (v.locked && v.grille >= 1 && !v.secureT) { v.secureT = st.t; a.say("Дверь заперта, решётка задвинута. Собери аптечку, воду и еду — и выключи свет."); }
+      if ((v.secureT && st.t - v.secureT > 30 && !st.zombies.some(z => z.z > 0)) || st.t > 200) a.toNight();
+    } else {
+      if (!v.night2 && st.t - st.nightT > 5) { v.night2 = { on: true }; G.guestBitten = Math.random() < 0.5; a.say("Стук в ночное окошко. Женский голос: «Пожалуйста! У ребёнка температура под сорок! Дайте хоть что-нибудь!» Подойди к окошку."); }
+      if (v.night2 && v.night2.on) { v.night2.t = (v.night2.t || 0) + dt; if (v.night2.t > 30) { v.night2.on = false; a.tally("mid", "Не подойти к окошку"); a.say("Стук стихает."); v.scratchAt = st.t + 5; } }
+      if (v.scratchAt && !st.scratch && st.t > v.scratchAt) a.startScratch("Скрежет по решётке. Медленно, без остановки. <b>Не ходи и не трогай экран</b>, пока не уйдёт.");
+    }
+  },
+  goal(st) {
+    const v = st.v, T6 = 6;
+    if (st.phase === "evening") {
+      if (v.man && v.man.atWindow && !v.gave && !v.manTurned) return { obj: "tray", short: "Окошко: бинты", text: "Подойди к ночному окошку справа от двери — положи бинты в лоток." };
+      if (v.man && v.man.inside && !v.man.leaving && !v.manTurned) return { obj: "man", short: "Бинты на прилавок", text: "Не подходи к нему. Встань за прилавком и положи пакет на дальний край." };
+      if (v.manTurned && v.man && v.man.inside && v.bdoor === "open") return { obj: "bdoor", short: "Подсобка: закрыть", text: "Беги в подсобку и закрой за собой дверь!" };
+      if (v.door === "open") return { n: 1, total: T6, obj: "door", short: "Дверь: закрыть", text: "Подойди к входной двери и нажми «Действие» — закроется." };
+      if (!v.locked) return { n: 1, total: T6, obj: "lock", short: "Замок: запереть", text: "«Действие» ещё раз — ключ: проведи пальцем вправо два раза." };
+      if (v.grille < 1) return { n: 2, total: T6, obj: "grille", short: "Решётка", text: "Решётка слева от двери: «Действие» и проводи пальцем вправо." };
+      if (v.meds < 1) return { n: 3, total: T6, obj: "meds", short: "Аптечка", text: "Полки за прилавком: держи «Действие» — соберёшь аптечку." };
+      if (v.water < 20 && v.pressure > 0) return { n: 4, total: T6, obj: "sink", short: "Вода: кран", text: "В подсобке у раковины держи «Действие» — набираешь воду." };
+      if (!v.food) return { n: 5, total: T6, obj: "fridge", short: "Холодильник", text: "Холодильник в подсобке: там обед коллеги." };
+      if (v.lights) return { n: 6, total: T6, obj: "switch", short: "Свет", text: "Выключатель у двери в подсобку." };
+      return null;
+    }
+    if (v.night2 && v.night2.on) return { obj: "tray", short: "Окошко", text: "Подойди к ночному окошку и посмотри, кто там." };
+    return null;
+  },
+  objectives: st => { const v = st.v; return st.phase === "evening" ? [[v.locked, "Замок"], [v.grille >= 1, "Решётка"], [v.meds >= 1, "Аптечка"], [v.water >= 10, `Вода ${Math.round(v.water)} л`], [v.food, "Еда"], [!v.lights, "Свет"]] : [[v.night2 && !v.night2.on, "Окошко"], [st.scratch && st.scratch.done, "Скрежет"]]; },
+  liveRes: st => { G.water = Math.round(st.v.water); },
+  render(st, now, a) {
+    const v = st.v;
+    v.doorAng += ((v.door === "open" ? 1.3 : 0) - v.doorAng) * 0.15; v.doorG.rotation.y = -v.doorAng;
+    v.grilleG.position.x = a.lerp(-1.4, 0, v.grille);
+    v.bdoorAng += ((v.bdoor === "open" ? 1.3 : 0) - v.bdoorAng) * 0.15; v.bdoorG.rotation.y = v.bdoorAng;
+    v.lamp.intensity = v.lights ? 1.3 : 0; v.lamp2.intensity = v.lights ? 0.9 : 0; v.sign.material.color.set(v.lights ? 0xffffff : 0x333333);
+  },
+  flash: st => (st.v.lights ? 0 : 1.2),
+  finish(st) {
+    const v = st.v;
+    G.water = Math.round(v.water); G.food = Math.max(G.food, v.food ? 1 : 0); if (v.meds >= 1) G.f.meds = true; G.f.door = true; G.f.dark = !v.lights;
+    const tips = [
+      { v: v.gave || v.manGone ? "good" : "mid", t: "Раненый", tip: "«Собака укусила» в первые часы почти всегда ложь. Помогай без контакта: лоток ночного окошка или дальний край прилавка." },
+      { v: v.grille >= 1 ? "good" : "bad", t: "Решётка", tip: "Замок плюс решётка: стекло двери держит удар хуже, чем кажется." },
+      { v: v.water >= 10 ? "good" : "bad", t: "Вода", tip: `У тебя ${Math.round(v.water)} л. В аптеке нет ванны — бутылки и кран в подсобке, пока есть напор.` },
+    ];
+    return { tone: v.water >= 10 && v.food ? "good" : "mid", out: `06:20. Аптека пережила ночь. ${v.meds >= 1 ? "Аптечка собрана, " : ""}воды ${Math.round(v.water)} л${v.food ? ", еды на день" : ", еды нет"}.`, tips, r: { next: NEXT } };
+  },
+};
+// ===== Grocery on Kievskaya: panic in the hall, the storage room is your shelter =====
+LOC3D.store = {
+  firstLine: "20:31. Продуктовый на Киевской. Ты стоишь в проходе с корзинкой.",
+  start: { x: 0, z: 3.4, yaw: 0 },
+  sky: 0x161c2a, hemi: 0.5,
+  howto: [
+    "Не иди к выходу с толпой — там давка и укушенная женщина.",
+    "Схвати упаковку воды и консервы с полок (держи «Действие»).",
+    "Беги на склад — дверь «Только для персонала» в дальнем правом углу.",
+    "Закрой дверь склада и задвинь засов — проведи пальцем вправо.",
+    "Подопри дверь коробками (держи) и выключи свет на складе.",
+  ],
+  bumpable: st => st.z < 7, bumpLine: "Задел стеллаж — банки с грохотом катятся по полу!",
+  build(a, st) {
+    const v = st.v; Object.assign(v, { water: 0, food: 0, sdoor: "open", sdoorAng: 1, bolt: false, boxes: 0, lights: true });
+    const wall = a.M(0xd6d2c4), floorT = a.ctex(64, 64, c => { for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { c.fillStyle = (x + y) % 2 ? "#c8c4b8" : "#b8b4a8"; c.fillRect(x * 16, y * 16, 16, 16); } });
+    floorT.wrapS = floorT.wrapT = a.T.RepeatWrapping; floorT.repeat.set(8, 10);
+    a.box(8.2, 0.02, 9.8, a.M(0xffffff, { map: floorT }), 0, 0, 4.8); a.box(8.2, 0.02, 9.8, 0xe8e6e0, 0, 3.0, 4.8);
+    a.wallZ(0, 9.6, -4.1, wall, 3); a.wallZ(0, 9.6, 4.1, wall, 3); a.wallX(-4.1, 4.1, 9.6, wall, 3);
+    a.wallX(-4.1, 2.6, 7.0, wall, 3); a.wallX(3.4, 4.1, 7.0, wall, 3); a.box(0.8, 0.8, 0.12, wall, 3.0, 2.6, 7.0); a.wallZ(7, 9.6, 1.2, wall, 3);
+    a.box(8.2, 0.6, 0.12, 0x2c4a3a, 0, 2.7, -0.06); a.glass(3.0, 2.4, -2.55, 1.2, -0.06); a.glass(3.0, 2.4, 2.55, 1.2, -0.06); a.glass(2.0, 2.4, 0, 1.2, -0.2);
+    a.sign("ПРОДУКТЫ 24", "#ffb347", "#1a1410", 2.4, 0.5, 0, 2.7, -0.14, Math.PI);
+    const cols = [0xc04040, 0x40a0d0, 0xe0c040, 0x60b060, 0xd08040, 0xffffff];
+    a.shelf(-2.6, 3.5, 3.4, 0.6, 1.8, "z", cols); a.reg("water", a.shelf(-0.9, 3.5, 3.4, 0.6, 1.8, "z", [0xdff2ff, 0x9fd2ff, 0xdff2ff])); a.reg("cans", a.shelf(0.9, 3.5, 3.4, 0.6, 1.8, "z", [0xb0b8c0, 0xc8a050, 0xb0b8c0, 0xd04040]));
+    a.shelf(2.7, 3.5, 3.4, 0.5, 1.8, "z", cols);
+    for (const x of [2.2, 3.4]) { a.box(0.8, 0.9, 0.5, 0x3a3f4a, x, 0.45, 1.05); a.box(0.3, 0.25, 0.05, 0x111111, x, 1.1, 0.9); }
+    a.sign("ТОЛЬКО ДЛЯ ПЕРСОНАЛА", "#ffffff", "#7a2020", 1.0, 0.18, 3.0, 2.35, 6.92);
+    v.sdoorG = a.group(2.6, 0, 7.0); a.box(0.8, 2.2, 0.05, 0x6a6e76, 0.4, 1.1, 0, v.sdoorG); a.reg("sdoor", v.sdoorG);
+    v.boltG = a.group(3.32, 1.2, 7.07); a.box(0.16, 0.04, 0.04, a.M(0x9aa0a8, { metalness: 0.7 }), 0, 0, 0, v.boltG); a.reg("bolt", v.boltG);
+    a.shelf(3.75, 8.3, 2.0, 0.5, 2.0, "z", [0xdff2ff, 0xc8a050, 0xb0b8c0]); a.shelf(1.55, 8.8, 1.2, 0.5, 2.0, "z", [0xc8a050, 0xdff2ff]);
+    v.boxG = a.group(2.0, 0, 8.6); for (let i = 0; i < 5; i++) a.box(0.5, 0.4, 0.4, 0xa07a4a, (i % 2) * 0.5 - 0.25, 0.2 + Math.floor(i / 2) * 0.4, 0, v.boxG); a.reg("boxes", v.boxG);
+    a.reg("switch", a.box(0.08, 0.12, 0.03, 0xf0f0f0, 1.3, 1.3, 7.3));
+    a.objs.switch.rotation.y = Math.PI / 2;
+    v.lamps = []; for (const z of [1.5, 4.5]) { const l = new a.T.PointLight(0xf8f4ff, 1.1, 10, 2); l.position.set(0, 2.8, z); a.scene.add(l); v.lamps.push(l); }
+    v.slamp = new a.T.PointLight(0xffe8c8, 0.8, 5, 2); v.slamp.position.set(2.6, 2.7, 8.3); a.scene.add(v.slamp);
+    v.street = a.street(0, { sidewalk: 3 });
+  },
+  rects(st) {
+    const v = st.v, L = [[-4.2, -4.1, 0, 9.7], [4.1, 4.2, 0, 9.7], [-4.2, 4.2, 9.6, 9.7], [-4.2, -1.0, -0.1, 0], [1.0, 4.2, -0.1, 0],
+      [-4.2, 2.6, 6.95, 7.05], [3.4, 4.2, 6.95, 7.05], [1.15, 1.25, 7, 9.6],
+      [-2.9, -2.3, 1.8, 5.2], [-1.2, -0.6, 1.8, 5.2], [0.6, 1.2, 1.8, 5.2], [2.45, 2.95, 1.8, 5.2], [1.8, 3.8, 0.8, 1.3],
+      [3.5, 4.1, 7.3, 9.3], [1.25, 1.8, 8.2, 9.4], [-12, 12, -8, -7.9], [-12, -11.9, -8, 0], [11.9, 12, -8, 0]];
+    if (v.sdoor !== "open") L.push([2.6, 3.4, 6.95, 7.05]);
+    if (v.boxes >= 1) L.push([2.6, 3.4, 7.1, 7.5]); else L.push([1.75, 2.3, 8.4, 8.8]);
+    return L;
+  },
+  muffle: (st, x, z) => (z > 7 && st.v.sdoor !== "open" ? 0.4 : 1),
+  objects: {
+    water: { name: "Полка с водой", verb: st => st.v.water >= 9 ? null : "схватить упаковку воды (держи)",
+      act(st, a) { a.openGest({ kind: "hold", text: "Тянешь упаковку 6×1,5 л с нижней полки. <b>Держи палец.</b>", hold: (s, dt) => { s.v.wp = Math.min(1, (s.v.wp || 0) + dt / 1.6); }, done: s => s.v.wp >= 1, progress: s => s.v.wp || 0, after: s => { s.v.water = 9; a.say("Упаковка воды — 9 литров. Тяжело, но своя."); a.tally("good", "Схватить воду, а не чипсы"); } }); } },
+    cans: { name: "Полка с консервами", verb: st => st.v.food >= 3 ? null : "сгрести консервы (держи)",
+      act(st, a) { a.openGest({ kind: "hold", text: "Тушёнка, рыба, фасоль — в корзину. <b>Держи палец.</b>", hold: (s, dt) => { s.v.cp = Math.min(1, (s.v.cp || 0) + dt / 1.6); }, done: s => s.v.cp >= 1, progress: s => s.v.cp || 0, after: s => { s.v.food = 3; a.say("Консервы на три дня. Теперь — на склад, дальний правый угол."); a.tally("good", "Взять консервы"); } }); } },
+    sdoor: { name: "Дверь склада", verb: st => st.v.bolt ? null : st.v.sdoor === "open" ? "закрыть" : "открыть",
+      act(st, a) { const v = st.v; v.sdoor = v.sdoor === "open" ? "closed" : "open"; a.noise(3, 7, 2); a.say(v.sdoor === "closed" ? (st.z > 7 ? "Дверь закрыта. Задвинь засов: «Действие» и проведи вправо." : "Дверь закрыта — а ты снаружи!") : "Дверь открыта."); } },
+    bolt: { name: "Засов", verb: st => st.z < 7.05 || st.v.sdoor === "open" ? null : st.v.bolt ? "отодвинуть" : "задвинуть",
+      act(st, a) { const to = !st.v.bolt; a.openGest({ kind: to ? "right" : "left", text: to ? "Засов тугой: <b>проводи пальцем вправо</b>." : "Отодвигаешь засов: <b>влево</b>.", step: s => { s.v.bt = (s.v.bt || 0) + 1; a.noise(3, 7, 1); }, done: s => s.v.bt >= 2, progress: s => (s.v.bt || 0) / 2, after: s => { s.v.bt = 0; s.v.bolt = to; a.say(to ? "Засов задвинут. Подопри дверь коробками." : "Засов отодвинут."); if (to) a.tally("good", "Закрыться на складе на засов"); } }); } },
+    boxes: { name: "Коробки", verb: st => st.v.boxes >= 1 || st.z < 7 ? null : "подпереть дверь (держи)",
+      act(st, a) { a.openGest({ kind: "hold", text: "Таскаешь коробки к двери. <b>Держи палец.</b>", hold: (s, dt) => { s.v.boxes = Math.min(1, s.v.boxes + dt / 3); }, done: s => s.v.boxes >= 1, progress: s => s.v.boxes, after: s => { a.say("Коробки до ручки двери. Теперь её не выдавить."); a.tally("good", "Забаррикадировать дверь склада"); s.x = Math.max(s.x, 1.5); s.z = Math.max(s.z, 7.8); } }); } },
+    switch: { name: "Выключатель", verb: st => st.z > 7 ? (st.v.lights ? "выключить свет" : "включить свет") : null, act(st, a) { st.v.lights = !st.v.lights; a.say(st.v.lights ? "Свет включён." : "Темно. Только полоска света из зала под дверью."); } },
+  },
+  smartAim(st) {
+    const v = st.v;
+    if (inRect(st, 2.2, 3.8, 6.4, 7.9)) { if (v.night2 && v.night2.on && st.z > 7) return null; if (st.z > 7.05 && v.sdoor === "open") return "sdoor"; if (st.z > 7.05 && !v.bolt) return "bolt"; if (st.z > 7.05 && v.boxes < 1) return "boxes"; }
+    return null;
+  },
+  sees(st, z, d) { if (z.human) return false; if (st.z > 7.05 && z.z < 7 && st.v.sdoor !== "open") return false; return d < 9; },
+  zombieTick(st, z) { if (z.state === "script") return; if (z.z < 6.95 && st.z > 7.05) { z.tx = 3.0; z.tz = 7.3; } },
+  touch: st => ({ cause: "Попасть в руки заражённому в зале", out: "В давке у полок кто-то хватает тебя за руку. Рука холодная.", tip: "В панике не беги к выходу с толпой. Прячься вглубь — склад с дверью и засовом лучше улицы." }),
+  update(st, dt, a) {
+    const v = st.v;
+    if (st.phase === "evening") {
+      if (!v.s0 && st.t > 0.5) { v.s0 = true; for (let i = 0; i < 9; i++) { const x = a.rnd(-3.6, 3.6), z = a.rnd(1.5, 6); a.spawnCiv(x, z, a.rnd(-0.8, 0.8), -6, a.rnd(1.8, 2.8)); } v.woman = a.spawnZ(0.4, 0.6, { human: true, harmless: true, state: "script", col: 0x9a6ab0, tx: 0.4, tz: 0.6 }); a.say("Крики снаружи. Охранник орёт: «Закрываю двери!» Толпа бросается к выходу. У входа женщина держится за окровавленную шею."); }
+      if (v.woman && !v.womanTurned && st.t > (st.easy ? 40 : 12)) { v.womanTurned = true; a.turn(v.woman); v.woman.speed = 1.0; a.say("Женщина у входа выпрямляется и медленно поворачивается к залу. Беги на склад — дальний правый угол!"); }
+      if (!st.easy && st.t > 20) { v.spawnT = (v.spawnT || 0) - dt; if (v.spawnT <= 0 && st.zombies.length < 5) { v.spawnT = 12; a.spawnZ(a.rnd(-2, 2), -4, { tx: 0, tz: 3 }); } }
+      if (v.bolt && v.boxes >= 1 && !v.secureT) { v.secureT = st.t; a.say("Ты на складе, дверь на засове и подпёрта. Выключи свет. Снаружи шаркают по залу."); }
+      if ((v.secureT && st.t - v.secureT > 20) || st.t > 220) { for (const z of st.zombies.slice()) if (z.z < 7) a.removeZ(z); a.toNight(); }
+    } else {
+      if (!v.night2 && st.t - st.nightT > 5) { v.night2 = { on: true }; G.guestBitten = Math.random() < 0.5; a.say("Стук в дверь склада: «Свои! Это Саня, охранник! Открой, я спрятался в подсобке, они ушли!» Подойди к двери."); }
+      if (v.night2 && v.night2.on && inRect(st, 2.2, 3.8, 7.05, 8.2) && !st.inspect) {
+        v.night2.on = false;
+        a.beginInspect({ frame: "gap", bitten: G.guestBitten, who: "Саня. ", line: "Ты приоткрываешь дверь на ладонь, держа ногой. «Руки покажи! Шею!» Веди пальцем.", yes: "Впустить", no: "Закрыть дверь",
+          onEnd: (yes, r, s) => { if (yes && r.bite) { a.tally("bad", "Впустить охранника с укусом"); s.v.guest = a.spawnZ(2.9, 7.6, { human: true, harmless: true, state: "script", col: 0x3a4a6a }); s.v.turnAt = s.t + 14; a.say("Саня протискивается внутрь и садится на коробки, пряча руку."); } else if (yes) { a.tally("good", "Проверить руки, потом впустить"); a.say("Саня внутри. Вдвоём снова задвигаете засов. У него фонарик и две шоколадки."); s.v.food += 1; } else { a.tally(r.bite ? "good" : "mid", r.bite ? "Не впустить охранника с укусом" : "Не впустить охранника"); a.say("Дверь снова на засове. Саня ругается и уходит."); } s.v.scratchAt = s.t + 6; } });
+      }
+      if (v.night2 && v.night2.on) { v.night2.t = (v.night2.t || 0) + dt; if (v.night2.t > 30) { v.night2.on = false; a.say("Стук стихает."); v.scratchAt = st.t + 4; } }
+      if (v.guest && v.turnAt && st.t > v.turnAt) { v.turnAt = null; a.turn(v.guest); v.guest.boxTrap = true; a.say("Саня хрипит и поднимается с коробок. На складе некуда деться."); }
+      if (v.scratchAt && !st.scratch && st.t > v.scratchAt) a.startScratch("Скрежет по двери склада. <b>Не ходи и не трогай экран</b>, пока не уйдёт.");
+    }
+  },
+  goal(st) {
+    const v = st.v, T5 = 5;
+    if (st.phase === "evening") {
+      if (st.z < 7 && v.water < 9) return { n: 1, total: T5, obj: "water", short: "Вода: хватай", text: "Полка с водой — в среднем ряду слева. Держи «Действие»." };
+      if (st.z < 7 && v.food < 3) return { n: 2, total: T5, obj: "cans", short: "Консервы", text: "Консервы — средний ряд справа. Держи «Действие»." };
+      if (st.z < 7 && v.sdoor !== "open") return { n: 3, total: T5, obj: "sdoor", short: "Дверь: открыть", text: "Дверь склада закрыта, а ты в зале — открой её: «Действие»." };
+      if (st.z < 7) return { n: 3, total: T5, at: [3.0, 1.3, 7.45], short: "Склад: сюда", text: "Беги к двери «Только для персонала» в дальнем правом углу." };
+      if (v.sdoor === "open") return { n: 4, total: T5, obj: "sdoor", short: "Дверь: закрыть", text: "Закрой дверь склада: «Действие»." };
+      if (!v.bolt) return { n: 4, total: T5, obj: "bolt", short: "Засов", text: "«Действие» — засов, проведи пальцем вправо." };
+      if (v.boxes < 1) return { n: 5, total: T5, obj: "boxes", short: "Коробки", text: "Подопри дверь коробками: держи «Действие»." };
+      if (v.lights) return { n: 5, total: T5, obj: "switch", short: "Свет", text: "Выключи свет на складе." };
+      return null;
+    }
+    if (v.night2 && v.night2.on) return { at: [3.0, 1.2, 7.5], short: "Дверь склада", text: "Подойди к двери склада." };
+    return null;
+  },
+  objectives: st => { const v = st.v; return st.phase === "evening" ? [[v.water >= 9, "Вода"], [v.food >= 3, "Консервы"], [st.z > 7.05, "На складе"], [v.bolt, "Засов"], [v.boxes >= 1, "Коробки"], [!v.lights, "Свет"]] : [[v.night2 && !v.night2.on, "Стук"], [st.scratch && st.scratch.done, "Скрежет"]]; },
+  liveRes: st => { G.water = st.v.water; },
+  render(st, now, a) {
+    const v = st.v;
+    v.sdoorAng += ((v.sdoor === "open" ? 1.3 : 0) - v.sdoorAng) * 0.15; v.sdoorG.rotation.y = -v.sdoorAng;
+    v.boltG.position.x = v.bolt ? 3.2 : 3.32;
+    v.boxG.position.set(a.lerp(2.0, 3.0, v.boxes), 0, a.lerp(8.6, 7.3, v.boxes));
+    for (const l of v.lamps) l.intensity = st.phase === "night" ? 0 : 1.1; v.slamp.intensity = v.lights ? 0.8 : 0;
+    for (const l of v.street) l.intensity = st.phase === "night" ? 0 : 1;
+  },
+  touchOverride: true,
+  flash: st => (st.z > 7 && !st.v.lights) || st.phase === "night" ? 1.2 : 0,
+  finish(st) {
+    const v = st.v; G.water = v.water; G.food = Math.max(G.food, v.food); G.f.door = true; G.f.dark = !v.lights;
+    const tips = [
+      { v: "good", t: "Давка", tip: "В панике толпа бежит к выходу, и там гибнут чаще всего. Уходи вглубь — к помещению с дверью." },
+      { v: v.water >= 9 ? "good" : "bad", t: "Вода", tip: "Хватай воду первой: без еды живут недели, без воды — три дня." },
+    ];
+    return { tone: v.water >= 9 ? "good" : "mid", out: `06:15. Ты пережил ночь на складе. Воды ${v.water} л, еды на ${v.food || 0} дн.`, tips, r: { next: NEXT } };
+  },
+};
+// ===== Garage in a cooperative off Zalesskaya =====
+LOC3D.garage = {
+  firstLine: "19:52. Гараж №112. Радио в машине: «…в Симферополе массовые нападения…»",
+  start: { x: -1.15, z: 1.2, yaw: 0 },
+  sky: 0x1a2132, hemi: 0.45,
+  howto: [
+    "Закрой обе створки ворот: «Действие» на створке и проводи пальцем вправо — они тяжёлые и скрипят.",
+    "Задвинь засов на воротах — проведи вправо.",
+    "Найди воду: в багажнике. Канистра — техническая, тосол — яд.",
+    "Телефон заряжай от прикуривателя, мотор не заводи: в закрытом гараже угарный газ убивает.",
+    "Ночью холодно — укройся чехлом из машины.",
+  ],
+  meter: { label: "воздух", value: st => 1 - st.v.co, text: st => st.v.engine ? "мотор работает!" : st.v.co > 0.05 ? "угарный газ" : "чисто", color: v => v > 0.6 ? "var(--ok)" : v > 0.3 ? "var(--warn)" : "var(--alarm)" },
+  build(a, st) {
+    const v = st.v; Object.assign(v, { gl: 0, gr: 0, bolt: false, water: 0, trunk: false, charged: false, engine: false, co: 0, blanket: false, lights: true, food: 0 });
+    const brick = a.M(0x6a6460), conc = a.M(0x55585e);
+    a.box(3.4, 0.02, 6.4, conc, 0, 0, 3.0); a.box(3.4, 0.02, 6.4, 0x3a3d42, 0, 2.6, 3.0);
+    a.wallZ(0, 6.2, -1.7, brick, 2.6); a.wallZ(0, 6.2, 1.7, brick, 2.6); a.wallX(-1.7, 1.7, 6.2, brick, 2.6);
+    // alley: other garages
+    for (const sx of [-1, 1]) for (let i = 1; i < 5; i++) { a.box(3.3, 2.6, 0.2, brick, sx * 3.5 * i, 1.3, -0.1); a.box(3.0, 2.2, 0.06, 0x4c5058, sx * 3.5 * i, 1.1, -0.22); a.sign(String(112 + sx * i), "#e8e2d6", "#2a2c30", 0.5, 0.2, sx * 3.5 * i, 2.45, -0.24, Math.PI); }
+    for (let i = -4; i <= 4; i++) { a.box(3.3, 2.6, 0.2, brick, i * 3.5, 1.3, -6.2); a.box(3.0, 2.2, 0.06, 0x4c5058, i * 3.5, 1.1, -6.08); }
+    const ground = new a.T.Mesh(new a.T.PlaneGeometry(40, 8), a.M(0x2a2b2e)); ground.rotation.x = -Math.PI / 2; ground.position.set(0, 0, -3.1); a.scene.add(ground);
+    v.yard = new a.T.PointLight(0xffc68a, 0.8, 12, 2); v.yard.position.set(4, 3.5, -3); a.scene.add(v.yard);
+    // gates: two leaves, hinged at the outer edges, opening outwards
+    v.gL = a.group(-1.55, 0, 0); a.box(1.55, 2.3, 0.06, 0x3e5a4a, 0.775, 1.15, 0, v.gL); a.reg("gateL", v.gL);
+    v.gR = a.group(1.55, 0, 0); a.box(1.55, 2.3, 0.06, 0x3e5a4a, -0.775, 1.15, 0, v.gR); a.reg("gateR", v.gR);
+    v.boltG = a.group(0.25, 1.2, 0.08); a.box(0.6, 0.06, 0.06, a.M(0x9aa0a8, { metalness: 0.7 }), 0, 0, 0, v.boltG); a.reg("bolt", v.boltG);
+    // car facing the gates
+    const car = a.group(0, 0, 3.5); a.box(1.7, 0.75, 3.9, 0x5a3434, 0, 0.55, 0, car); a.box(1.5, 0.6, 2.0, 0x4a2a2a, 0, 1.2, 0.2, car); a.box(1.45, 0.45, 0.05, a.M(0x9fc8e8, { transparent: true, opacity: 0.5 }), 0, 1.2, -0.82, car);
+    for (const [x, z] of [[-0.85, -1.3], [0.85, -1.3], [-0.85, 1.3], [0.85, 1.3]]) { const w = new a.T.Mesh(new a.T.CylinderGeometry(0.32, 0.32, 0.2, 14), a.M(0x111111)); w.rotation.z = Math.PI / 2; w.position.set(x, 0.32, z); car.add(w); }
+    a.reg("trunk", a.box(1.5, 0.3, 0.05, 0x5a3434, 0, 0.85, 5.46));
+    a.reg("cardoor", a.box(0.05, 0.6, 1.0, 0x5a3434, -0.87, 0.95, 3.4));
+    a.reg("engine", a.box(0.05, 0.1, 0.1, 0x222222, -0.88, 1.15, 3.1));
+    a.reg("blanket", a.box(0.05, 0.3, 0.6, 0x5a6a7a, 0.87, 1.0, 4.2));
+    // back wall: bench, canister, antifreeze
+    a.box(1.2, 0.9, 0.5, 0x6a5a44, 0.9, 0.45, 5.9); a.reg("canister", a.box(0.3, 0.4, 0.2, 0x2a6a3a, 0.6, 1.1, 5.9)); a.reg("antifreeze", a.box(0.14, 0.3, 0.14, 0x30a0d0, 1.1, 1.05, 5.9));
+    a.sign("ТОСОЛ", "#ffffff", "#1a5a8a", 0.22, 0.07, 1.1, 1.08, 5.82, Math.PI);
+    a.shelf(-1.4, 5.6, 0.9, 0.35, 1.8, "z", [0x777777, 0xb0a070, 0x555555]);
+    v.bulb = new a.T.PointLight(0xffe2b0, 1.0, 7, 2); v.bulb.position.set(0, 2.4, 2.5); a.scene.add(v.bulb);
+    a.reg("switch", a.box(0.03, 0.12, 0.08, 0xf0f0f0, -1.63, 1.3, 0.6));
+  },
+  rects(st) {
+    const v = st.v, L = [[-1.8, -1.65, 0, 6.3], [1.65, 1.8, 0, 6.3], [-1.8, 1.8, 6.15, 6.3], [-0.85, 0.85, 1.55, 5.45], [0.3, 1.6, 5.6, 6.2], [-1.6, -1.2, 5.1, 6.1],
+      [-15, -1.7, -0.25, 0.05], [1.7, 15, -0.25, 0.05], [-15, 15, -6.3, -6.0], [-15, -14.8, -6, 0], [14.8, 15, -6, 0]];
+    if (v.gl > 0.9) L.push([-1.55, 0, -0.06, 0.06]); if (v.gr > 0.9) L.push([0, 1.55, -0.06, 0.06]);
+    return L;
+  },
+  objects: {
+    gateL: { name: "Левая створка", verb: st => st.v.gl < 1 && st.z > -0.3 ? "закрыть (тяни)" : null, act(st, a) { gateGest(st, a, "gl"); } },
+    gateR: { name: "Правая створка", verb: st => st.v.gr < 1 && st.z > -0.3 ? "закрыть (тяни)" : null, act(st, a) { gateGest(st, a, "gr"); } },
+    bolt: { name: "Засов", verb: st => st.v.gl >= 1 && st.v.gr >= 1 && st.z > 0 ? (st.v.bolt ? "отодвинуть" : "задвинуть") : null,
+      act(st, a) { const to = !st.v.bolt; a.openGest({ kind: to ? "right" : "left", text: to ? "Засов: <b>проведи пальцем вправо</b>." : "Засов: <b>влево</b>.", step: s => { s.v.bt = (s.v.bt || 0) + 1; a.noise(0, 0, 2); }, done: s => s.v.bt >= 2, progress: s => (s.v.bt || 0) / 2, after: s => { s.v.bt = 0; s.v.bolt = to; a.say(to ? "Засов лязгает. Ворота закрыты изнутри." : "Засов отодвинут."); if (to) a.tally("good", "Закрыть ворота гаража на засов"); } }); } },
+    trunk: { name: "Багажник", verb: st => st.v.trunk ? null : "открыть", act(st, a) { st.v.trunk = true; st.v.water += 3; st.v.food += 1; a.say("В багажнике: две бутылки воды по 1,5 и пачка печенья. Немного, но это питьевая вода."); } },
+    cardoor: { name: "Машина", verb: st => st.v.charged ? null : "зарядить телефон от прикуривателя", act(st, a) { st.v.charged = true; a.say("Телефон заряжается от аккумулятора. Мотор заводить не нужно."); a.tally("good", "Заряжать от аккумулятора без мотора"); } },
+    engine: { name: "Ключ зажигания", verb: st => st.v.engine ? "заглушить мотор" : "завести мотор (погреться)",
+      act(st, a) { st.v.engine = !st.v.engine; a.noise(0, 3, st.v.engine ? 9 : 1); a.say(st.v.engine ? (st.v.gl >= 1 && st.v.gr >= 1 ? "Мотор гудит, тянет теплом… и выхлопом. Ворота закрыты." : "Мотор гудит на весь кооператив.") : "Мотор заглушён."); } },
+    blanket: { name: "Чехол с сиденья", verb: st => st.v.blanket ? null : "укрыться", act(st, a) { st.v.blanket = true; a.say("Чехол на плечи. Теплее, и без выхлопа."); } },
+    canister: { name: "Канистра", verb: () => "попить?", act(st, a) { a.say("Пахнет бензином и ржавчиной: это техническая вода для омывателя. Пить нельзя."); } },
+    antifreeze: { name: "Тосол", verb: () => "попить сладкой жидкости",
+      act(st, a) { a.die("Выпить тосол", "Сладковатый вкус. Через час тебя скручивает.", "Тосол и антифриз ядовиты: этиленгликоль смертелен даже в небольшом количестве. Пить можно только воду из бутылок.", "poison"); } },
+    switch: { name: "Лампочка", verb: st => st.v.lights ? "выключить свет" : "включить свет", act(st, a) { st.v.lights = !st.v.lights; } },
+    kolya: { name: "Дядя Коля", reach: 2.6, verb: st => st.v.kolya && st.v.kolya.atGate && !st.v.kolyaDone ? "взять тушёнку (не касаясь рук)" : null,
+      act(st, a) { st.v.kolyaDone = true; st.v.food += 2; a.say("Он ставит две банки на землю и отходит на шаг: «Сиди тихо до утра, сынок. Ворота закрой». Ты берёшь банки, не касаясь его."); a.tally("good", "Взять помощь без контакта"); st.v.kolya.state = "script"; st.v.kolya.tx = -14; st.v.kolya.tz = -3; st.v.kolya.leaving = true; } },
+  },
+  smartAim(st) {
+    const v = st.v;
+    if (v.kolya && v.kolya.atGate && !v.kolyaDone && st.z < 2 && Math.hypot(st.x - v.kolya.x, st.z - v.kolya.z) < 2.6) return "kolya";
+    if (st.z > -0.2 && st.z < 1.6) { if (v.gl < 1 && st.x < 0.2) return "gateL"; if (v.gr < 1 && st.x >= -0.2) return "gateR"; if (v.gl < 1) return "gateL"; if (v.gr < 1) return "gateR"; if (!v.bolt) return "bolt"; }
+    return null;
+  },
+  sees(st, z, d) { if (z.human) return false; const closed = st.v.gl >= 1 && st.v.gr >= 1; if (st.z > 0 && z.z < 0 && closed) return false; return d < (st.v.lights && st.z > 0 ? 11 : 8); },
+  zombieTick(st, z) { if (z.state === "script") return; if (z.z < 0 && st.z > 0 && st.v.gl >= 1 && st.v.gr >= 1) { z.tz = Math.min(z.tz, -0.4); } },
+  touch: () => ({ cause: "Не закрыть ворота вовремя", out: "Из темноты кооператива — шарканье, потом рука на плече.", tip: "Гаражный кооператив вечером пуст и тёмен. Ворота — первым делом, свет — выключить." }),
+  update(st, dt, a) {
+    const v = st.v, closed = v.gl >= 1 && v.gr >= 1;
+    v.co = Math.max(0, Math.min(1, v.co + (v.engine ? (closed ? 0.03 : 0.004) : -0.02) * dt));
+    if (v.co >= 1) { a.die("Завести мотор в закрытом гараже", "Тепло, гудит мотор. Глаза закрываются сами.", "Угарный газ без цвета и запаха. Мотор в закрытом гараже убивает за минуты — каждую зиму так погибают люди.", "co"); return; }
+    if (v.co > 0.5 && !v.coSaid) { v.coSaid = true; a.say("Голова тяжёлая, тошнит. Это угарный газ! Заглуши мотор!"); }
+    if (st.phase === "evening") {
+      if (!v.kolya && st.t > (st.easy ? 25 : 18)) { v.kolya = a.spawnZ(-12, -3, { human: true, harmless: true, state: "script", col: 0x7a6a5a, tx: 0, tz: -1.4, speed: 0.9 }); a.say("По проезду идёт сосед, дядя Коля из 108-го, с пакетом."); }
+      const k = v.kolya;
+      if (k && !k.atGate && !k.leaving && k.z > -1.6 && Math.abs(k.x) < 1) { k.atGate = true; if (closed) { a.say("Коля стучит в ворота: «Живой? Сиди тихо до утра, не открывай никому». Шаги удаляются."); k.tx = -14; k.tz = -3; k.leaving = true; v.kolyaDone = true; } else a.say("Коля останавливается у ворот: «Держи, сынок, тушёнку». Не подходи вплотную."); }
+      if (k && k.leaving && k.x < -13) { a.removeZ(k); v.kolya = null; }
+      if (!st.easy && st.t > 35) { v.spawnT = (v.spawnT || 0) - dt; if (v.spawnT <= 0 && st.zombies.filter(z => !z.human).length < 3) { v.spawnT = 18; a.spawnZ(Math.random() < 0.5 ? -13 : 13, -3, { tx: 0, tz: -3 }); } }
+      if (closed && v.bolt && !v.secureT) { v.secureT = st.t; a.say("Ворота на засове. Найди воду в багажнике, заряди телефон от прикуривателя."); }
+      if ((v.secureT && st.t - v.secureT > 25) || st.t > 200) { for (const z of st.zombies.slice()) a.removeZ(z); a.toNight(); }
+    } else {
+      v.cold = Math.min(1, (v.cold || 0) + dt * (v.blanket || v.engine ? 0 : 0.02));
+      if (v.cold > 0.5 && !v.coldSaid) { v.coldSaid = true; a.say("Холодно, зуб на зуб не попадает. Чехол с сиденья в машине — лучше, чем мотор."); }
+      if (!v.night2 && st.t - st.nightT > 5) { v.night2 = { on: true }; G.guestBitten = Math.random() < 0.5; a.say("Стук в ворота: «Это Димон из 115-го! Пусти, у меня машина не заводится, они везде!» Подойди к воротам."); }
+      if (v.night2 && v.night2.on && st.z < 1.2 && !st.inspect) {
+        v.night2.on = false;
+        a.beginInspect({ frame: "gap", bitten: G.guestBitten, who: "Димон. ", line: "Ты сдвигаешь засов на ладонь, держа створку. «Руки покажи! Шею!» Веди пальцем.", yes: "Впустить", no: "Закрыть",
+          onEnd: (yes, r, s) => { if (yes && r.bite) { a.tally("bad", "Впустить соседа с укусом"); s.v.guest = a.spawnZ(1.2, 1.0, { human: true, harmless: true, state: "script", col: 0x4a5a7a }); s.v.turnAt = s.t + 14; a.say("Димон протискивается внутрь и садится у верстака, прижимая руку."); } else if (yes) { a.tally("good", "Проверить руки, потом впустить"); s.v.food += 1; a.say("Димон внутри. У него пачка сухарей и фонарь."); } else { a.tally(r.bite ? "good" : "mid", r.bite ? "Не впустить соседа с укусом" : "Не впустить соседа"); a.say("Засов на место. Шаги уходят."); } s.v.scratchAt = s.t + 6; } });
+      }
+      if (v.night2 && v.night2.on) { v.night2.t = (v.night2.t || 0) + dt; if (v.night2.t > 30) { v.night2.on = false; v.scratchAt = st.t + 4; } }
+      if (v.guest && v.turnAt && st.t > v.turnAt) { v.turnAt = null; a.turn(v.guest); v.guest.boxTrap = true; a.say("Димон хрипит и поднимается. В гараже некуда деться."); }
+      if (v.scratchAt && !st.scratch && st.t > v.scratchAt) a.startScratch("Скрежет по воротам. <b>Не ходи и не трогай экран</b>, пока не уйдёт.");
+    }
+  },
+  goal(st) {
+    const v = st.v, T5 = 5;
+    if (v.engine && v.gl >= 1 && v.gr >= 1) return { obj: "engine", short: "Заглуши мотор!", text: "Угарный газ! Заглуши мотор — ключ зажигания, водительская сторона." };
+    if (st.phase === "evening") {
+      if (v.kolya && v.kolya.atGate && !v.kolyaDone) return { obj: "kolya", short: "Тушёнка", text: "Возьми тушёнку у Коли — он ставит банки на землю." };
+      if (v.gl < 1) return { n: 1, total: T5, obj: "gateL", short: "Створка: тяни", text: "Встань у ворот, «Действие» на левой створке, проводи пальцем вправо." };
+      if (v.gr < 1) return { n: 1, total: T5, obj: "gateR", short: "Створка: тяни", text: "Теперь правая створка: «Действие» и проводи пальцем вправо." };
+      if (!v.bolt) return { n: 2, total: T5, obj: "bolt", short: "Засов", text: "«Действие» — засов, проведи пальцем вправо." };
+      if (!v.trunk) return { n: 3, total: T5, obj: "trunk", short: "Багажник", text: "Багажник машины — у дальней стены. Там вода." };
+      if (!v.charged) return { n: 4, total: T5, obj: "cardoor", short: "Зарядка", text: "Водительская дверь: заряди телефон от прикуривателя. Мотор не заводи." };
+      if (v.lights) return { n: 5, total: T5, obj: "switch", short: "Свет", text: "Выключи лампочку — свет виден из-под ворот." };
+      return null;
+    }
+    if (v.night2 && v.night2.on) return { at: [0, 1.2, 0], short: "Ворота", text: "Подойди к воротам." };
+    if (!v.blanket && (v.cold || 0) > 0.3) return { obj: "blanket", short: "Чехол", text: "Холодно: возьми чехол с пассажирского сиденья." };
+    return null;
+  },
+  objectives: st => { const v = st.v; return st.phase === "evening" ? [[v.gl >= 1 && v.gr >= 1, "Ворота"], [v.bolt, "Засов"], [v.trunk, `Вода ${v.water} л`], [v.charged, "Телефон"], [!v.lights, "Свет"]] : [[v.night2 && !v.night2.on, "Стук"], [v.blanket, "Тепло"], [st.scratch && st.scratch.done, "Скрежет"]]; },
+  liveRes: st => { G.water = st.v.water; },
+  render(st, now, a) {
+    const v = st.v;
+    v.gL.rotation.y = a.lerp(1.45, 0, v.gl); v.gR.rotation.y = a.lerp(-1.45, 0, v.gr);
+    v.boltG.position.x = v.bolt ? 0 : 0.25;
+    v.bulb.intensity = v.lights ? 1.0 : 0; v.yard.intensity = st.phase === "night" ? 0 : 0.8;
+  },
+  vignette: st => st.v.co > 0.2 ? `inset 0 0 120px rgba(80,90,60,${st.v.co})` : "none",
+  flash: st => (!st.v.lights || st.phase === "night" ? 1.2 : 0),
+  finish(st) {
+    const v = st.v; G.water = v.water; G.food = Math.max(G.food, v.food); if (v.charged) G.charge = 100; G.f.door = true;
+    const tips = [
+      { v: v.engine || v.co > 0.3 ? "bad" : "good", t: "Мотор", tip: "Двигатель в закрытом помещении — угарный газ. Заряжай от аккумулятора, грейся чехлами и одеждой." },
+      { v: v.water >= 3 ? "mid" : "bad", t: "Вода", tip: "В гараже воды почти нет. Техническая вода и тосол — не питьё. Утром придётся искать воду." },
+    ];
+    return { tone: "mid", out: `06:00. Ночь в гараже позади. Воды ${v.water} л, еды на ${v.food} дн.`, tips, r: { next: NEXT } };
+  },
+};
+function gateGest(st, a, key) {
+  a.openGest({ kind: "right", text: "Тяни створку: <b>проводи пальцем вправо</b>, раз за разом. Петли скрипят на весь кооператив.", step: s => { s.v[key] = Math.min(1, s.v[key] + 0.25); a.noise(0, 0, 5); }, done: s => s.v[key] >= 1, progress: s => s.v[key], after: s => a.say(s.v.gl >= 1 && s.v.gr >= 1 ? "Обе створки закрыты. Теперь засов." : "Одна створка закрыта. Теперь вторая.") });
+}
+// ===== Bus stop on Kirova avenue: run, get into a building, pass the check =====
+LOC3D.street = {
+  firstLine: "20:12. Остановка на проспекте Кирова. Ты ждёшь троллейбус.",
+  start: { x: -2, z: -1.4, yaw: Math.PI / 2 },
+  sky: 0x1e2638, hemi: 0.55, sprint: true,
+  howto: [
+    "Толпа бежит слева, за ней — заражённые. Не беги с толпой.",
+    "Беги вправо к подъезду с домофоном («Бежать» / Shift).",
+    "У домофона держи «Действие» — обзваниваешь квартиры, пока кто-то не откроет.",
+    "Зайди и закрой за собой дверь подъезда.",
+    "Иди к квартире в конце коридора. Тебя попросят показать руки — проведи пальцем вверх, потом вправо.",
+  ],
+  build(a, st) {
+    const v = st.v; Object.assign(v, { dial: 0, entry: "closed", entryAng: 0, checked: 0, inFlat: false, flatDoor: "closed" });
+    a.street(0, { sidewalk: 3, lamps: [-10, -2, 6, 14] });
+    const fac = a.M(0xb8a890);
+    a.wallX(-22, 7.6, 0.06, fac, 6); a.wallX(8.4, 22, 0.06, fac, 6); a.box(0.8, 3.8, 0.12, fac, 8, 4.1, 0.06);
+    for (let i = -20; i < 22; i += 3) if (Math.abs(i - 8) > 1.5) { a.box(1.2, 1.2, 0.05, 0x1a2230, i, 3.6, -0.02); a.box(1.2, 1.2, 0.05, 0x1a2230, i, 1.4, -0.02); }
+    a.sign("ЦУМ →", "#ffffff", "#2a4a8a", 1.2, 0.3, -12, 2.8, -0.04, Math.PI);
+    a.sign("ПОДЪЕЗД 3", "#ffffff", "#3a3a3a", 0.9, 0.22, 8, 2.35, -0.04, Math.PI);
+    const stop = a.group(-2, 0, -2.3); a.box(3, 0.08, 1.2, 0x3a4a5a, 0, 2.5, 0, stop); a.box(0.08, 2.5, 0.08, 0x666666, -1.4, 1.25, 0.5, stop); a.box(0.08, 2.5, 0.08, 0x666666, 1.4, 1.25, 0.5, stop); a.box(2.8, 1.6, 0.04, a.M(0x9fc8e8, { transparent: true, opacity: 0.25 }), 0, 1.4, 0.55, stop); a.box(2.6, 0.45, 0.4, 0x5a4a3a, 0, 0.45, 0.3, stop);
+    v.entryG = a.group(7.6, 0, 0.06); a.box(0.8, 2.2, 0.06, 0x4a3a2a, 0.4, 1.1, 0, v.entryG); a.reg("entry", v.entryG);
+    a.reg("intercom", a.box(0.2, 0.3, 0.06, 0x222222, 8.65, 1.4, -0.04));
+    // stairwell and the flat on the first floor up
+    const sw = a.M(0x6a7a7a);
+    a.wallZ(0, 6, 6.5, sw, 3); a.wallZ(0, 9.5, 9.5, sw, 3); a.box(3.1, 0.02, 9.6, 0x5a5a5a, 8, 0.01, 4.75); a.box(3.1, 0.02, 9.6, 0x8a8a8a, 8, 3, 4.75);
+    for (let i = 0; i < 8; i++) a.box(1.2, 0.17 * (i + 1), 0.28, 0x7a7a7a, 9.0, 0.085 * (i + 1), 1.5 + i * 0.28);
+    a.wallX(6.5, 7.6, 6, sw, 3); a.wallX(8.4, 9.5, 6, sw, 3); a.box(0.8, 0.8, 0.12, sw, 8, 2.6, 6);
+    v.flatG = a.group(7.6, 0, 6); a.box(0.8, 2.2, 0.06, 0x6a3a2a, 0.4, 1.1, 0, v.flatG); a.box(0.04, 0.04, 0.02, 0x111111, 0.4, 1.55, -0.04, v.flatG); a.reg("flat", v.flatG);
+    a.wallZ(6, 9.5, 6.5, a.M(0x8c9a8a), 3); a.wallX(6.5, 9.5, 9.5, a.M(0x8c9a8a), 3);
+    a.box(0.9, 0.45, 1.8, 0x4b5a74, 7.2, 0.225, 8.2); a.box(0.8, 0.75, 0.6, 0x8a6a4a, 8.8, 0.375, 7.5);
+    v.swLight = new a.T.PointLight(0xd8e0ff, 0.6, 7, 2); v.swLight.position.set(8, 2.8, 3); a.scene.add(v.swLight);
+    v.flatLight = new a.T.PointLight(0xffe2b8, 0.0, 6, 2); v.flatLight.position.set(8, 2.6, 7.8); a.scene.add(v.flatLight);
+  },
+  rects(st) {
+    const v = st.v, L = [[-22, 7.6, -0.02, 0.12], [8.4, 22, -0.02, 0.12], [-22, 22, -12.2, -12], [-22.2, -22, -12, 0], [22, 22.2, -12, 0],
+      [-3.5, -0.5, -2.95, -2.6], [6.4, 6.55, 0, 9.6], [9.45, 9.6, 0, 9.6], [6.5, 7.6, 5.95, 6.05], [8.4, 9.5, 5.95, 6.05], [6.5, 9.5, 9.45, 9.6], [8.7, 9.5, 1.3, 3.8], [6.75, 7.65, 7.3, 9.1], [8.4, 9.2, 7.2, 7.8]];
+    if (v.entry !== "open") L.push([7.6, 8.4, -0.02, 0.12]);
+    if (v.flatDoor !== "open") L.push([7.6, 8.4, 5.95, 6.05]);
+    return L;
+  },
+  objects: {
+    intercom: { name: "Домофон", reach: 1.6, verb: st => st.v.entry === "open" || st.v.dial >= 1 ? null : "обзванивать квартиры (держи)",
+      act(st, a) { a.openGest({ kind: "hold", text: "Жмёшь все кнопки подряд: «Откройте! Пожалуйста!» <b>Держи палец.</b> Писк домофона слышно на всю улицу.", hold: (s, dt) => { s.v.dial = Math.min(1, s.v.dial + dt / (s.easy ? 3 : 4)); if (Math.random() < dt * 2) a.noise(s.x, s.z, 5); }, done: s => s.v.dial >= 1, progress: s => s.v.dial, after: s => { s.v.entry = "open"; a.say("Писк — дверь щёлкает! Кто-то открыл. Заходи и закрой за собой."); } }); } },
+    entry: { name: "Дверь подъезда", verb: st => st.v.entry === "open" ? (st.z > 0.2 ? "закрыть за собой" : null) : null,
+      act(st, a) { st.v.entry = "closed"; a.noise(8, 0, 3); a.say("Дверь хлопает, магнитный замок держит. Снаружи бьются в неё. Иди к квартире в конце коридора."); a.tally("good", "Укрыться в подъезде и закрыть дверь"); } },
+    flat: { name: "Дверь квартиры", verb: st => st.v.flatDoor === "open" || st.v.inFlat ? null : "постучать",
+      act(st, a) {
+        a.say("Дверь приоткрывается на цепочке. Пожилой мужчина: «Стой там! Руки покажи! Подними!»");
+        a.openGest({ kind: "up", text: "<b>Медленно подними руки</b>: проведи пальцем вверх. Без резких движений.", step: s => { s.v.checked = Math.min(2, s.v.checked + 1); }, done: s => s.v.checked >= 2, progress: s => s.v.checked / 2,
+          after: s => { a.say("«Рукава закатай! Повернись!»"); a.openGest({ kind: "right", text: "<b>Закатай рукава</b>: проведи пальцем вправо — по очереди.", step: q => { q.v.checked += 1; }, done: q => q.v.checked >= 4, progress: q => (q.v.checked - 2) / 2,
+            after: q => { q.v.flatDoor = "open"; a.say("Он кивает и снимает цепочку: «Заходи. Я Виктор Петрович. Вода в ванне, суп на плите»."); a.tally("good", "Спокойно показать руки, когда проверяют тебя"); } }); } }); } },
+  },
+  smartAim(st) {
+    const v = st.v;
+    if (v.entry !== "open" && v.dial < 1 && st.z < 0 && Math.abs(st.x - 8.4) < 1.4 && st.z > -1.6) return "intercom";
+    if (v.entry === "open" && st.z > 0.3 && st.z < 2.5 && Math.abs(st.x - 8) < 1.4 && !v.closedEntry) return "entry";
+    if (v.flatDoor !== "open" && st.z > 4.6 && st.z < 6 && Math.abs(st.x - 8) < 1.2) return "flat";
+    return null;
+  },
+  sees(st, z, d) { if (st.z > 0.15 && z.z < 0 && st.v.entry !== "open") return false; return d < 10; },
+  touch: st => ({ cause: "Остаться на улице", out: st.z < 0 ? "Толпа рассеялась, и ты остался на открытом месте. Сзади хватают за капюшон." : "Холодные пальцы на запястье.", tip: "На улице главное — быстро уйти с открытого места в помещение с дверью. Подъезд, магазин, кафе." }),
+  update(st, dt, a) {
+    const v = st.v;
+    if (st.phase === "evening") {
+      if (!v.s0 && st.t > 1) { v.s0 = true; for (let i = 0; i < 12; i++) a.spawnCiv(-22 - a.rnd(0, 8), -a.rnd(0.5, 2.8), 26, -a.rnd(0.5, 2.8), a.rnd(3.2, 4.2)); a.say("Со стороны ЦУМа бежит толпа: «Они кусаются!» За ними, шатаясь, идут люди с вытянутыми руками. Беги к подъезду справа!"); }
+      if (!v.s1 && st.t > (st.easy ? 12 : 5)) { v.s1 = true; for (let i = 0; i < 3; i++) a.spawnZ(-20 - i * 2, -a.rnd(0.8, 2.5), { tx: 0, tz: -1.5 }); }
+      if (!st.easy) { v.spawnT = (v.spawnT || 6) - dt; if (v.spawnT <= 0 && st.zombies.length < 8) { v.spawnT = 7; a.spawnZ(-21, -a.rnd(0.5, 4), { tx: 0, tz: -2 }); } }
+      if (v.entry === "closed" && v.dial >= 1) v.closedEntry = true;
+      if (v.flatDoor === "open" && st.z > 6.3 && !v.inFlat) { v.inFlat = true; v.flatDoor = "closed"; v.flatLight.intensity = 1.0; for (const z of st.zombies.slice()) a.removeZ(z); a.say("Дверь за тобой закрывается на все замки. У Виктора Петровича горячий суп и полная ванна воды."); v.nightAt = st.t + 12; }
+      if (v.nightAt && st.t > v.nightAt) { a.toNight(); }
+    } else {
+      if (!v.scratchSet) { v.scratchSet = true; v.scratchAt = st.t + 8; a.say("Ночь. Виктор Петрович спит в кресле. Из подъезда — шаги на лестнице."); }
+      if (v.scratchAt && !st.scratch && st.t > v.scratchAt) a.startScratch("Скрежет по двери квартиры. <b>Не ходи и не трогай экран</b>, пока не уйдёт.");
+    }
+  },
+  goal(st) {
+    const v = st.v, T5 = 5;
+    if (st.phase !== "evening") return null;
+    if (v.entry !== "open" && v.dial < 1) return st.x < 6.5 ? { n: 1, total: T5, at: [8.6, 1.5, 0], short: "Подъезд: беги", sprint: true, text: "Беги вправо к подъезду с домофоном — «Бежать» (Shift)." } : { n: 2, total: T5, obj: "intercom", short: "Домофон", text: "У домофона держи «Действие» — обзваниваешь квартиры." };
+    if (st.z < 0.3) return { n: 3, total: T5, at: [8, 1.2, 0.3], short: "Заходи", text: "Дверь открыта — заходи внутрь!" };
+    if (!v.closedEntry && v.entry === "open") return { n: 3, total: T5, obj: "entry", short: "Закрой дверь", text: "Закрой дверь подъезда за собой: «Действие»." };
+    if (v.flatDoor !== "open" && !v.inFlat) return { n: 4, total: T5, obj: "flat", short: "Квартира", text: "Иди по коридору к двери в конце и постучи." };
+    if (!v.inFlat) return { n: 5, total: T5, at: [8, 1.2, 6.8], short: "Заходи", text: "Заходи в квартиру." };
+    return null;
+  },
+  objectives: st => { const v = st.v; return [[v.dial >= 1, "Домофон"], [v.closedEntry, "Подъезд закрыт"], [v.checked >= 4, "Показать руки"], [v.inFlat, "В квартире"], [st.scratch && st.scratch.done, "Ночь"]]; },
+  render(st, now, a) {
+    const v = st.v; v.entryAng += ((v.entry === "open" ? 1.3 : 0) - v.entryAng) * 0.15; v.entryG.rotation.y = -v.entryAng;
+    v.flatG.rotation.y = -(v.flatDoor === "open" ? 1.3 : 0);
+  },
+  flash: st => (st.phase === "night" ? 1.0 : 0),
+  finish(st) {
+    G.water = Math.max(G.water, 20); G.food = Math.max(G.food, 2); G.f.door = true;
+    return { tone: "good", out: "06:10. Ты пережил ночь у Виктора Петровича. У него полная ванна воды и суп на два дня.", tips: [{ v: "good", t: "Улица", tip: "На открытом месте спасает только скорость: уйти в любое помещение с дверью, не бежать с толпой." }, { v: "good", t: "Проверка", tip: "Тебя тоже проверяют. Медленно, руки на виду, рукава закатать. Спорить — значит остаться за дверью." }], r: { next: NEXT } };
+  },
+};
+// ===== Morning: the walk through Simferopol yards to an evacuation point =====
+LOC3D.evac = {
+  firstLine: "07:30. Утро. Радио: «…пункты эвакуации работают до 14:00…» Ты выходишь во двор.",
+  start: { x: 1, z: 0, yaw: -Math.PI / 2 },
+  sky: 0x8090a8, hemi: 1.0, sprint: true,
+  howtoTitle: "Дорога к пункту эвакуации",
+  howto: [
+    "Иди по дворам вперёд, к перекрёстку. Двигайся вдоль стен, тихо.",
+    "Нет воды или еды — разбитый киоск по дороге (держи «Действие»).",
+    "Заражённый стоит спиной: обойди вприсядку или брось камень в сторону.",
+    "Можно залезть на гаражи и посмотреть, какой пункт живой.",
+    "На перекрёстке три пункта. Павший — ворота открыты, внутри бродят. Не входи!",
+    "На живом пункте солдат крикнет «Руки вверх!» — медленно подними руки и закатай рукава.",
+  ],
+  onBegin(st) { st.phase = "day"; },
+  build(a, st) {
+    const v = st.v; Object.assign(v, { kiosk: false, stone: false, scouted: false, belt: false, kid: false, kidAsked: false });
+    v.pts = G.points.map((p, i) => ({ ...p, i, gx: [64, 76, 64][i], gz: [-15, 0, 15][i] }));
+    const ground = new a.T.Mesh(new a.T.PlaneGeometry(120, 60), a.M(0x5a5e58)); ground.rotation.x = -Math.PI / 2; ground.position.set(40, 0, 0); a.scene.add(ground);
+    a.box(80, 0.02, 3, 0x6a6e70, 32, 0.01, 0);
+    const wallM = a.M(0xb8a890), wallM2 = a.M(0xa89a84);
+    const winTex = a.ctex(64, 128, (c, w, h) => { c.fillStyle = "#b8a890"; c.fillRect(0, 0, w, h); for (let y = 6; y < h; y += 16) for (let x = 6; x < w; x += 14) { c.fillStyle = "#2a3240"; c.fillRect(x, y, 8, 10); } });
+    const hm = a.M(0xffffff, { map: winTex });
+    a.box(61, 12, 1, hm, 30.5, 6, -6.5); a.box(61, 12, 1, hm, 30.5, 6, 6.5); // houses along the yards (row ends at x = 61)
+    a.box(1, 12, 13, hm, -0.5, 6, 0);
+    a.box(14, 12, 1, hm, 74, 6, -6.5); a.box(14, 12, 1, hm, 74, 6, 6.5); // around the crossroads
+    // branches to the three points
+    for (const sd of [-1, 1]) { a.box(1, 6, 9, wallM2, 60.5, 3, sd * 10.5); a.box(1, 6, 9, wallM2, 67.5, 3, sd * 10.5); }
+    a.box(1, 6, 13, wallM2, 80.5, 3, 0); // behind point B
+    // kiosk, stones, garages with a ladder, car, playground
+    const k = a.group(12, 0, -5); a.box(2.2, 2.4, 1.6, 0x4a7a5a, 0, 1.2, 0, k); a.box(1.6, 0.9, 0.05, a.M(0x9fc8e8, { transparent: true, opacity: 0.25 }), 0, 1.5, 0.83, k); for (let i = 0; i < 8; i++) a.box(0.05, 0.05, 0.05, 0xc8e8ff, -0.6 + i * 0.17, 0.05, 1.0 + (i % 3) * 0.12, k);
+    a.reg("kiosk", k); a.sign("ПРОДУКТЫ", "#ffffff", "#2a5a3a", 1.4, 0.3, 12, 2.55, -4.18);
+    v.stoneM = a.reg("stone", a.box(0.18, 0.12, 0.15, 0x7a7a74, 16.5, 0.06, 3.2));
+    for (let i = 0; i < 6; i++) { a.box(3, 2.4, 3, 0x6a6460, 26 + i * 3.1, 1.2, 4.5); a.box(2.8, 2, 0.05, 0x4c5058, 26 + i * 3.1, 1.0, 2.97); }
+    a.reg("ladder", a.group(25.2, 0, 3.4)); for (let i = 0; i < 8; i++) a.box(0.5, 0.04, 0.04, 0x8a8a8a, 0, 0.3 + i * 0.3, 0, a.objs.ladder); for (const s2 of [-0.25, 0.25]) a.box(0.04, 2.6, 0.04, 0x8a8a8a, s2, 1.3, 0, a.objs.ladder);
+    const car = a.group(40, 0, 2.6); car.rotation.z = 0.35; a.box(1.8, 0.8, 4, 0xc7b04a, 0, 0.6, 0, car); a.box(1.6, 0.6, 2, 0xa79030, 0, 1.25, 0.2, car);
+    a.reg("car", a.box(0.6, 0.4, 0.6, 0x2a2d35, 38.9, 0.3, 1.4));
+    const pg = a.group(50, 0, -3.5); a.box(2, 0.3, 2, 0xd0b060, 0, 0.15, 0, pg); a.box(0.08, 2.2, 0.08, 0xc04040, -1, 1.1, -1, pg); a.box(0.08, 2.2, 0.08, 0xc04040, 1, 1.1, -1, pg); a.box(2.1, 0.08, 0.08, 0xc04040, 0, 2.2, -1, pg);
+    // the three points
+    const names = ["←", "↑", "→"];
+    for (const p of v.pts) {
+      const ax = p.i === 1 ? "z" : "x";
+      if (p.i === 1) { a.box(0.3, 2.4, 2.5, 0x7a7a7a, 74, 1.2, -2.5); a.box(0.3, 2.4, 2.5, 0x7a7a7a, 74, 1.2, 2.5); }
+      else { a.box(2, 2.4, 0.3, 0x7a7a7a, 62, 1.2, p.gz); a.box(2, 2.4, 0.3, 0x7a7a7a, 66, 1.2, p.gz); }
+      a.sign(`${names[p.i]} ${p.name}`, "#ffffff", "#2a3a5a", 2.2, 0.4, p.i === 1 ? 70 : 64, 3.2, p.i === 1 ? -5.9 : p.gz * 0.45, p.i === 1 ? 0 : (p.i === 0 ? 0 : Math.PI));
+      if (p.kind === "safe") {
+        p.soldier = a.spawnZ(p.i === 1 ? 74.8 : 64, p.i === 1 ? 0 : p.gz + Math.sign(p.gz) * 0.8, { human: true, harmless: true, state: "script", col: 0x4f5a38 });
+        p.soldier.g.rotation.y = p.i === 1 ? -Math.PI / 2 : (p.gz < 0 ? 0 : Math.PI); a.reg("soldier", p.soldier.g);
+        const fl = new a.T.PointLight(0xfffbe0, 1.5, 14, 2); fl.position.set(p.i === 1 ? 77 : 64, 4, p.i === 1 ? 0 : p.gz + Math.sign(p.gz) * 3); a.scene.add(fl);
+        for (let i = 0; i < 3; i++) a.box(0.9, 0.9, 0.9, 0x8a8a84, p.i === 1 ? 75.5 : 62.5 + i * 1.5, 0.45, p.i === 1 ? -1.5 + i * 1.5 : p.gz + Math.sign(p.gz) * 1.8);
+      } else {
+        p.inmates = []; for (let i = 0; i < 3; i++) p.inmates.push(a.spawnZ(p.i === 1 ? 77 + i : 63 + i, p.i === 1 ? -1 + i : p.gz + Math.sign(p.gz) * (2 + i), { state: "pen" }));
+        const fire = new a.T.PointLight(0xff7a30, 2, 10, 2); fire.position.set(p.i === 1 ? 78 : 65, 1, p.i === 1 ? 2 : p.gz + Math.sign(p.gz) * 3); a.scene.add(fire); p.fire = fire;
+        a.box(1.6, 0.7, 3, 0x2a2a2a, p.i === 1 ? 78 : 65, 0.35, p.i === 1 ? 2 : p.gz + Math.sign(p.gz) * 3);
+      }
+    }
+    v.loner = a.spawnZ(21, -0.4, { state: "idle" }); v.loner.g.rotation.y = -Math.PI / 2;
+    v.man = a.spawnZ(39.3, 1.5, { human: true, harmless: true, state: "script", col: 0x6a7a8a }); v.man.g.rotation.x = -1.2; v.man.g.position.y = 0.3;
+    if (Math.random() < 1) v.kidNpc = a.spawnZ(50, -3.2, { human: true, harmless: true, state: "script", col: 0xe0a0c0 }); v.kidNpc.g.scale.setScalar(0.65); a.reg("kidNpc", v.kidNpc.g);
+  },
+  rects(st) {
+    const L = [[-1, 0, -6, 6], [0, 61, -7, -6], [0, 61, 6, 7], [67, 81, -7, -6], [67, 81, 6, 7],
+      [60, 61, -15, -6], [67, 68, -15, -6], [60, 61, 6, 15], [67, 68, 6, 15], [80, 81, -6, 6], [60, 68, -22, -21], [60, 68, 21, 22],
+      [10.9, 13.1, -5.8, -4.2], [24.4, 44.5, 3, 7], [38.9, 41.1, 0.6, 4.6]];
+    return L;
+  },
+  rectsZ(st) { return this.rects(st); },
+  objects: {
+    kiosk: { name: "Разбитый киоск", reach: 2.2, verb: st => st.v.kiosk ? null : "взять воду и еду (держи)",
+      act(st, a) { a.openGest({ kind: "hold", text: "Перешагиваешь осколки, берёшь воду и консервы. Стекло хрустит. <b>Держи палец.</b>", hold: (s, dt) => { s.v.kp = Math.min(1, (s.v.kp || 0) + dt / 2.5); if (Math.random() < dt * 1.5) a.noise(12, -4, 4); }, done: s => s.v.kp >= 1, progress: s => s.v.kp || 0, after: s => { s.v.kiosk = true; G.water += 6; G.food += 2; renderRes(); a.say("Четыре бутылки воды и две банки тушёнки. Уходи, пока тихо."); a.tally("good", "Вылазка за водой днём, быстро и тихо"); } }); } },
+    stone: { name: "Камень", verb: st => st.v.stone ? null : "взять", act(st, a) { st.v.stone = true; st.v.stoneM.visible = false; a.say("Камень в руке. Нажми «Действие», когда захочешь бросить его подальше — туда, куда смотришь."); } },
+    throw: { name: "Камень в руке", reach: 99, verb: st => st.v.stone && !st.v.thrown ? "бросить туда, куда смотришь" : null,
+      act(st, a) { st.v.thrown = true; const tx = st.x - Math.sin(st.yaw) * 8, tz = Math.max(-5.5, Math.min(5.5, st.z - Math.cos(st.yaw) * 8)); a.noise(tx, tz, 9); a.say("Камень звенит о мусорный бак. Заражённый поворачивается на звук и бредёт туда."); a.tally("good", "Отвлечь заражённого звуком"); } },
+    ladder: { name: "Лестница на гаражи", verb: st => st.v.scouted ? null : "залезть и посмотреть",
+      act(st, a) { st.v.scouted = true; a.tally("good", "Разведать пункты сверху"); a.say(st.v.pts.map(p => `<b>${p.name}</b>: ${p.kind === "safe" ? "прожекторы, солдаты, люди проходят по одному" : "ворота открыты, дым, внутри бредут фигуры"}`).join("<br>")); } },
+    car: { name: "Мужчина под машиной", reach: 3, verb: st => st.v.belt ? null : "кинуть ему ремень (не подходя)",
+      act(st, a) { st.v.belt = true; a.tally("good", "Помочь без контакта: кинуть ремень"); a.say("Он тянет за ремень и выползает. Нога в укусах. «Спасибо…» Он ковыляет в сторону. Ты отпускаешь ремень."); const m = st.v.man; m.g.rotation.x = 0; m.g.position.y = 0; m.tx = 30; m.tz = -4; m.speed = 0.5; m.state = "walkoff"; } },
+    kidNpc: { name: "Девочка", reach: 3, verb: st => st.v.kidAsked ? null : "попросить показать ладошки",
+      act(st, a) { st.v.kidAsked = true; a.beginInspect({ frame: "gap", bitten: false, who: "Аня. ", line: "Ты присаживаешься в двух шагах: «Покажи ладошки. И шейку». Веди пальцем.", yes: "Взять с собой", no: "Оставить", onEnd: (yes, r, s) => { if (yes) { s.v.kid = true; G.f.kid = true; a.tally("good", "Проверить ребёнка и взять с собой"); a.say("Чистые. Аня молча берёт тебя за рукав."); } else a.say("Ты уходишь. Не оглядываешься."); } }); } },
+    soldier: { name: "Солдат", reach: 6, verb: st => st.v.atSafe && !st.v.checked ? "поднять руки" : null,
+      act(st, a) { a.openGest({ kind: "up", text: "<b>Медленно подними руки</b>: проведи пальцем вверх. Без резких движений.", step: s => { s.v.ck = (s.v.ck || 0) + 1; }, done: s => s.v.ck >= 2, progress: s => (s.v.ck || 0) / 2, after: s => { a.say("«Рукава закатай! Повернись!»"); a.openGest({ kind: "right", text: "<b>Закатай рукава и повернись</b>: проведи пальцем вправо.", step: q => { q.v.ck += 1; }, done: q => q.v.ck >= 4, progress: q => (q.v.ck - 2) / 2, after: q => { q.v.checked = true; a.tally("good", "Пройти проверку на посту спокойно"); a.say("Солдат светит фонарём на руки, шею, лодыжки. Кивает: «Проходи. Борт через двадцать минут»."); q.v.winAt = q.t + 3; } }); } }); } },
+  },
+  smartAim(st) {
+    const v = st.v;
+    if (v.atSafe && !v.checked) return "soldier";
+    if (v.stone && !v.thrown && v.loner && v.loner.state === "idle" && st.x > 14 && st.x < 21) return "throw";
+    if (!v.kiosk && Math.hypot(st.x - 12, st.z + 4) < 2.3 && (G.water < 5 || G.food <= 0)) return "kiosk";
+    if (!v.kidAsked && Math.hypot(st.x - 50, st.z + 3.2) < 3) return "kidNpc";
+    if (!v.belt && Math.hypot(st.x - 39.3, st.z - 1.5) < 3) return "car";
+    return null;
+  },
+  sees(st, z, d) {
+    if (z.human || z.state === "pen") return false;
+    if (z.state === "idle") { const quiet = st.crouch || st.sneak; const behind = st.x < z.x; return d < (quiet ? 1.8 : behind ? 3.2 : 5); }
+    return d < 9;
+  },
+  zombieTick(st, z, dt, a) {
+    const v = st.v;
+    if (z.state === "walkoff") { if (Math.hypot(z.x - z.tx, z.z - z.tz) < 0.4) a.removeZ(z); return; }
+    if (z.state === "pen") { z.tx = z.x + Math.sin(st.t + z.ph) * 0.5; z.tz = z.z + Math.cos(st.t * 0.7 + z.ph) * 0.5; for (const p of v.pts) if (p.inmates && p.inmates.includes(z) && p.entered) { z.state = "chase"; } }
+    if (z.state === "idle") { z.tx = z.x; z.tz = z.z; }
+  },
+  touch: st => ({ cause: st.v.inPen ? "Войти в павший пункт" : "Подпустить заражённого на улице", out: st.v.inPen ? "Три шага за ворота — и фигуры поворачиваются разом." : "Шарканье за спиной ты услышал слишком поздно.", tip: st.v.inPen ? "Признаки павшего пункта: открытые ворота, нет охраны, дым, медленное движение внутри. Разворачивайся сразу." : "На улице иди вдоль стен, останавливайся на углах и слушай. Мимо заражённого — вприсядку или отвлеки звуком." }),
+  update(st, dt, a) {
+    const v = st.v;
+    if (!v.s0 && st.t > 1) { v.s0 = true; a.say(`Радио: «Пункты эвакуации: ${G.points.map(p => p.name).join(", ")}. Работают до 14:00». Иди по дворам вперёд, к перекрёстку.`); }
+    if (!v.s1 && st.x > 15 && v.loner) { v.s1 = true; a.say("Впереди, посреди двора, стоит заражённый спиной к тебе. Покачивается. Обойди вприсядку вдоль стены — или возьми камень и брось в сторону."); }
+    if (!v.s2 && st.x > 34) { v.s2 = true; a.say("Под перевёрнутой машиной стонет мужчина: «Помоги! Ногу зажало!» Штанина в крови. Не трогай руками."); }
+    if (!v.s3 && st.x > 46) { v.s3 = true; a.say("На детской площадке плачет девочка лет семи. Рядом лежит взрослый, лицом вниз."); }
+    if (!v.s4 && st.x > 57) { v.s4 = true; a.say(`Перекрёсток. Три таблички: ${v.pts.map(p => p.name).join(", ")}. Подходи к любому — сначала посмотри издалека.`); }
+    if (!st.easy && st.x > 8) { v.spawnT = (v.spawnT || 10) - dt; if (v.spawnT <= 0 && st.zombies.filter(z => z.state !== "pen" && z.state !== "script").length < 4) { v.spawnT = 16; a.spawnZ(Math.max(1, st.x - 14), a.rnd(-4, 4), { tx: st.x, tz: 0 }); } }
+    v.atSafe = false; v.inPen = false;
+    for (const p of v.pts) {
+      const dx = st.x - p.gx, dz = st.z - p.gz, d = Math.hypot(dx, dz);
+      if (d < 7 && !p.seen) { p.seen = true; a.say(p.kind === "safe" ? `${p.name}: бетонные блоки, прожектор, солдат. «Стоять! Руки вверх!»` : `${p.name}: ворота распахнуты, у входа дымит машина, внутри медленно бредут фигуры. Не входи!`); }
+      if (p.kind === "safe" && d < 6) v.atSafe = true;
+      const past = p.i === 1 ? st.x > 74.2 : Math.abs(st.z) > Math.abs(p.gz) + 0.2 && Math.abs(st.x - 64) < 4;
+      if (p.kind !== "safe" && past) { p.entered = true; v.inPen = true; }
+      if (p.kind === "safe" && past && !v.checked && !v.shot) { v.shot = true; a.die("Пойти на пост без команды", "«Стоять!» Очередь в воздух, вторая — под ноги. Тебя отгоняют от поста.", "На посту проверяют всех. Остановись, подними руки, выполняй команды. Ты для них — возможно заражённый.", "shot"); return; }
+    }
+    if (v.winAt && st.t > v.winAt) { tally("good", "Добраться до пункта эвакуации"); a.finish({ tone: "good", out: "Солдат кивает на вертолёт за блоками. Лопасти уже крутятся.", tips: [{ v: "good", t: "Пост", tip: "Медленно, руки на виду, рукава закатать — и тебя пропускают за минуту." }], r: { end: "saved" } }); return; }
+    if (st.t > 600 && !v.late) { v.late = true; a.finish({ tone: "mid", out: "14:00. Последний борт улетел, пока ты бродил по дворам.", tips: [{ v: "mid", tip: "Пункты работают по времени. Разведай быстро и иди." }], r: { end: "alone" } }); }
+  },
+  goal(st) {
+    const v = st.v;
+    if (v.atSafe && !v.checked) return { obj: "soldier", short: "Подними руки", text: "Солдат кричит «Руки вверх!» — нажми «Действие» и медленно подними руки." };
+    if (v.inPen) return { at: [64, 1.2, 0], short: "Назад!", text: "Это павший пункт — разворачивайся и уходи!" };
+    if (st.x < 12 && !v.kiosk && (G.water < 5 || G.food <= 0)) return { n: 1, total: 4, obj: "kiosk", short: "Киоск", text: "Разбитый киоск слева: возьми воду и еду (держи «Действие»)." };
+    if (st.x < 21 && v.loner && v.loner.state === "idle") return { n: 2, total: 4, at: [24, 1.2, 4.6 > 0 ? -5 : 0], crouch: true, short: "Обойди тихо", text: v.stone ? "Брось камень в сторону («Действие») или обойди вприсядку вдоль стены." : "Обойди заражённого вприсядку вдоль стены — или возьми камень справа." };
+    if (st.x < 58) return { n: 3, total: 4, at: [58, 1.2, 0], short: "К перекрёстку", text: v.scouted ? "Иди к перекрёстку." : "Иди к перекрёстку. Можно залезть на гаражи справа и посмотреть, какой пункт живой." };
+    return { n: 4, total: 4, at: [66, 1.2, 0], short: "Пункты", text: "Подойди к пункту, посмотри издалека. Павший — не входи. Живой — делай, что скажет солдат." };
+  },
+  objectives: st => { const v = st.v; return [[v.kiosk || (G.water >= 5 && G.food > 0), "Вода и еда"], [st.x > 22, "Мимо заражённого"], [v.scouted, "Разведка"], [v.belt, "Мужчина"], [v.kid, "Аня"], [v.checked, "Пост"]]; },
+  render() {},
+  flash: () => 0,
+  finish() { return { tone: "mid", out: "", tips: [], r: { end: "alone" } }; },
+};
+S.evacAction = { label: "Дорога", action: true, module: "world", cfg: "evac", place: "Симферополь · дворы", clock: "07:30" };
+S.worldAction = { label: "Вечер", action: true, module: "world", place: g => g.loc.place, clock: g => g.loc.clock };
+
 // ---------- engine ----------
 let cur = null, timerId = null, deadline = 0, selected = [];
 function setArt(k) { if (k !== artKind) { artKind = k; artT0 = performance.now(); } }
@@ -2323,9 +3420,10 @@ function show(id) {
   if (sc.skip && sc.skip(G)) { show(NEXT); return; }
   cur = sc; selected = [];
   if (sc.action) {
-    renderTop(0, 3, val(sc.place), sc.clock, sc.label);
+    renderTop(0, 3, val(sc.place), val(sc.clock), sc.label);
     $("artBox").hidden = true;
-    (sc.module === "flat" ? Flat : Action).start(G, res => { $("artBox").hidden = false; setArt(res.r.end ? "bitten" : "dawn"); renderTop(2, 3, val(sc.place), "06:10", "Утро"); verdict(res.tone, res.out, res.tips, res.r); });
+    const mod = sc.module === "flat" ? Flat : sc.module === "world" ? { start: (g, cb) => World.start(LOC3D[sc.cfg || g.locId], g, cb) } : Action;
+    mod.start(G, res => { $("artBox").hidden = false; setArt(res.r.end === "saved" ? "heli" : res.r.end === "alone" ? "roof" : res.r.end ? "bitten" : "dawn"); renderTop(2, 3, val(sc.place), "06:10", "Утро"); verdict(res.tone, res.out, res.tips, res.r); });
     return;
   }
   $("artBox").hidden = false;
@@ -2404,7 +3502,7 @@ function verdict(tone, out, tips, r) {
   const n = $("next"); n.onclick = () => r.end ? ending(r.end) : show(r.next || NEXT); n.focus({ preventScroll: true });
 }
 function ending(id) {
-  Action.stop(); Flat.stop(); $("artBox").hidden = false;
+  Action.stop(); Flat.stop(); World.stop(); $("artBox").hidden = false;
   const e = END[id];
   setArt(e.art);
   renderTop(0, 0, "Итог · " + G.loc.name, "день 1", "итог");
@@ -2424,7 +3522,7 @@ function ending(id) {
   $("again").onclick = menu; $("retry").onclick = () => startRun(loc); $("retry").focus({ preventScroll: true });
 }
 function menu() {
-  Action.stop(); Flat.stop(); $("artBox").hidden = false;
+  Action.stop(); Flat.stop(); World.stop(); $("artBox").hidden = false;
   G = null; clearInterval(timerId); renderTop(0, 0, "ZombiCraumia", "день 1", ""); setArt("menu");
   const ids = Object.keys(LOCS);
   $("body").innerHTML = `<div class="verdict">
@@ -2453,7 +3551,7 @@ addEventListener("keydown", e => {
 });
 sizeArt(); requestAnimationFrame(drawArt);
 menu();
-window.__zc = { Action, Flat, S, LOCS, get G() { return G; }, show, startRun }; // for automated tests
+window.__zc = { Action, Flat, World, LOC3D, S, LOCS, get G() { return G; }, show, startRun }; // for automated tests
 })();
 </script>
 <!--ARTIFACT-BODY-END-->
